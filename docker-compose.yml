@@ -1,0 +1,42 @@
+version: '3.7'
+
+volumes:
+  db-data: {}
+
+services:
+  db:
+    build:
+      context: ./backend
+      dockerfile: ./compose/couchbase/Dockerfile
+    env_file:
+      - .envs
+    volumes:
+      - db-data:/opt/couchbase/var/
+    ports:
+      - "8091-8094:8091-8094"
+      - "11210:11210"
+    ulimits:
+      nproc: 65535
+      core:
+        soft: 100000000
+        hard: 100000000
+      memlock:
+        soft: 100000000
+        hard: 100000000
+      nofile:
+        soft: 40960
+        hard: 40960
+
+  app:
+    build:
+      context: ./backend
+      dockerfile: ./compose/fastapi/Dockerfile
+    env_file:
+      - .envs
+    ports:
+      - '8000:8000'
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - db
+    command: ./compose/fastapi/entrypoint.sh
