@@ -9,7 +9,7 @@ from .utils import output_pydantic_model, get_document_if_exists
 
 
 @output_pydantic_model(model=BrandDB)
-def create_brand(brand):
+def get_or_create_brand(brand):
     bucket = ClusterHolder.cluster.bucket(BRANDS_BUCKET)
     documents = get_document_if_exists(bucket, brand)
     if not documents:

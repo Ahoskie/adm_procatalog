@@ -5,12 +5,12 @@ from core.config import PRODUCTS_BUCKET
 from models.product import ProductDB, BrandDB
 from . import upsert, get, get_all, filter_query
 from .utils import output_pydantic_model
-from .brands import create_brand
+from .brands import get_or_create_brand
 
 
 def create_product(product):
     bucket = ClusterHolder.cluster.bucket(PRODUCTS_BUCKET)
-    brand = create_brand(product.brand)
+    brand = get_or_create_brand(product.brand)
     product.brand = brand
     result_product = upsert(bucket, product, key=str(uuid4()))
     return result_product
@@ -29,7 +29,7 @@ def get_all_products():
 
 def get_product_by_name(name):
     bucket = ClusterHolder.cluster.bucket(PRODUCTS_BUCKET)
-    return [item['product'] for item in filter_query(bucket, name=name)]
+    return filter_query(bucket, name=name)
 
 
 def get_brand_by_name(name):
