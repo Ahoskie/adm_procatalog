@@ -1,4 +1,4 @@
-FROM couchbase/server:latest
+FROM couchbase/server:community
 
 MAINTAINER procatalog
 CMD ["couchbase-server"]

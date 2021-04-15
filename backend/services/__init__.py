@@ -37,11 +37,9 @@ def update(bucket: Bucket, value: PydanticModel, key):
 
 
 def get(bucket: Bucket, key):
-    result = bucket.get(key)
     query_string = f'SELECT META(b).id AS id, b.* FROM {bucket.name} AS b WHERE META(b).id="{key}"'
     result = [row for row in bucket.query(query_string, limit=1)]
     if result:
-        # result.value['id'] = key
         return result[0]
 
 
