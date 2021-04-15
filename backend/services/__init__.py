@@ -13,7 +13,10 @@ def get_next_id(bucket: Bucket):
     query_result = bucket.query(
         f'SELECT MAX(META(b).id) FROM {bucket.name} AS b'
     )
-    next_id = int(query_result.get_single_result()['$1']) + 1
+    actual_id = query_result.get_single_result()['$1']
+    if not actual_id:
+        actual_id = '0'
+    next_id = int(actual_id) + 1
     return str(next_id)
 
 
@@ -22,18 +25,32 @@ def upsert(bucket: Bucket, value: PydanticModel, key=None):
         key = get_next_id(bucket)
     result = bucket.upsert(key, jsonable_encoder(value))
     if result.success:
-        return_value = get(bucket, key).value
-        return_value['id'] = key
+        return_value = get(bucket, key)
         return return_value
 
 
-def get(bucket: Bucket, key: UUID):
-    result = bucket.get(key)
+def update(bucket: Bucket, value: PydanticModel, key):
+    result = bucket.upsert(key, jsonable_encoder(value))
     if result.success:
-        return result
+        return_value = get(bucket, key)
+        return return_value
 
 
-def get_all(bucket: Bucket, skip: int = 0, limit: int = 100):
+def get(bucket: Bucket, key):
+    result = bucket.get(key)
+    query_string = f'SELECT META(b).id AS id, b.* FROM {bucket.name} AS b WHERE META(b).id="{key}"'
+    result = [row for row in bucket.query(query_string, limit=1)]
+    if result:
+        # result.value['id'] = key
+        return result[0]
+
+
+def delete(bucket: Bucket, key):
+    result = bucket.remove(key)
+    return result.value
+
+
+def get_all(bucket: Bucket, skip: int = 0, limit: int = 50):
     query_result = bucket.query(
         f'SELECT META(b).id as id, b.* FROM {bucket.name} AS b', limit=limit, skip=skip
     )

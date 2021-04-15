@@ -5,7 +5,6 @@ CLUSTER_USERNAME=admin
 CLUSTER_PASSWORD=hArD_p@$sWoRd
 SERVICES=data,index,query,fts
 CLUSTER_NAME=My Couchbase Cluster
-SERVICES=data,index,query,fts
 CLUSTER_RAMSIZE=100
 BUCKET=ecommerce
 BUCKET_RAMSIZE=100
