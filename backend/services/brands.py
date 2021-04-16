@@ -1,5 +1,3 @@
-from couchbase.exceptions import DocumentNotFoundException
-
 from db.buckets import Buckets
 from core.config import BRANDS_BUCKET
 from .exceptions import DocumentAlreadyExists, DocumentNotFound
@@ -13,10 +11,7 @@ def get_all_brands():
 
 def get_brand_by_id(brand_id):
     bucket = Buckets.get_bucket(BRANDS_BUCKET)
-    try:
-        return get(bucket, brand_id)
-    except DocumentNotFoundException:
-        raise DocumentNotFound(brand_id)
+    return get(bucket, brand_id)
 
 
 def create_brand(brand):
@@ -36,7 +31,4 @@ def update_brand(brand_id, brand):
 
 def remove_brand(brand_id):
     bucket = Buckets.get_bucket(BRANDS_BUCKET)
-    try:
-        return delete(bucket, brand_id)
-    except DocumentNotFoundException:
-        raise DocumentNotFound(brand_id)
+    return delete(bucket, brand_id)

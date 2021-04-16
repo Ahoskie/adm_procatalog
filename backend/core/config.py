@@ -21,6 +21,7 @@ COUCHBASE_IP = os.getenv('COUCHBASE_IP')
 
 
 # DB Data
+INT_COUNTER_NAME = 'id_counter'
 PRODUCTS_BUCKET = 'product'
 BRANDS_BUCKET = 'brand'
 TAGS_BUCKET = 'tag'

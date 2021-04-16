@@ -7,7 +7,7 @@ class Attribute(BaseModel):
     name: str
 
 
-class AttributeDB(BaseModel):
+class AttributeDB(Attribute):
     id: int
 
 

@@ -1,26 +1,41 @@
-from db import ClusterHolder
-from core.config import TAGS_BUCKET
-from . import upsert, get, get_all, filter_query
+from db.buckets import Buckets
+from core.config import TAGS_BUCKET, ATTRIBUTE_BUCKET
+from services import upsert, get, get_all, update, delete, filter_query
+from services.utils import get_document_if_exists, get_or_create, get_or_bulk_create
+from services.exceptions import DocumentAlreadyExists, DocumentNotFound
 from models.tag import TagNoAttributes, TagDB
 
-from .utils import output_pydantic_model, get_document_if_exists
 
-
-@output_pydantic_model(model=TagDB)
 def create_tag(tag):
-    bucket = ClusterHolder.cluster.bucket(TAGS_BUCKET)
-    documents = get_document_if_exists(bucket, tag)
-    if documents:
-        return
+    bucket = Buckets.get_bucket(TAGS_BUCKET)
+    tags = filter_query(bucket, name=tag.name)
+    if tags:
+        raise DocumentAlreadyExists(tag.name)
+    tag.attrs = get_or_bulk_create(Buckets.get_bucket(ATTRIBUTE_BUCKET), tag.attrs)
     return upsert(bucket, tag)
 
 
-@output_pydantic_model(model=TagNoAttributes)
-def get_or_create_tags(tags: list):
-    bucket = ClusterHolder.cluster.bucket(TAGS_BUCKET)
-    documents = get_document_if_exists(bucket, brand)
-    if not documents:
-        result_brand = upsert(bucket, brand)
-    else:
-        result_brand = documents[0]
-    return result_brand
+def get_all_tags():
+    bucket = Buckets.get_bucket(TAGS_BUCKET)
+    documents = get_all(bucket)
+    return documents
+
+
+def get_tag_by_id(tag_id):
+    bucket = Buckets.get_bucket(TAGS_BUCKET)
+    document = get(bucket, tag_id)
+    return document
+
+
+def update_tag_by_id(tag_id, tag):
+    bucket = Buckets.get_bucket(TAGS_BUCKET)
+    tag.attrs = get_or_bulk_create(Buckets.get_bucket(ATTRIBUTE_BUCKET), tag.attrs)
+    updated_tag = update(bucket, tag, tag_id)
+    if not updated_tag:
+        raise DocumentNotFound(tag_id)
+    return updated_tag
+
+
+def remove_tag_by_id(tag_id):
+    bucket = Buckets.get_bucket(TAGS_BUCKET)
+    return delete(bucket, tag_id)

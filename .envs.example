@@ -1,7 +1,7 @@
 # Couchbase
 # --------------------------------------------------
 NODE_TYPE=DEFAULT
-    CLUSTER_USERNAME=admin
+CLUSTER_USERNAME=admin
 CLUSTER_PASSWORD=hArD_p@$sWoRd
 SERVICES=data,index,query,fts
 CLUSTER_NAME=My Couchbase Cluster

@@ -16,7 +16,7 @@ def initialize_cluster():
     for i in range(max_tries):
         try:
             cluster = Cluster(COUCHBASE_IP,
-                              ClusterOptions(
+                              options=ClusterOptions(
                                   PasswordAuthenticator(COUCHBASE_USER, COUCHBASE_PASSWORD))
                               )
             return cluster
@@ -46,5 +46,3 @@ def initialize_buckets():
                 result = bucket.query(
                     f'CREATE PRIMARY INDEX `{bucket_name}_index` ON `{bucket_name}` USING GSI',
                 )
-                result.execute()
-                result.fetch()

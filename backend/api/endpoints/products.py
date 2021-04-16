@@ -18,7 +18,7 @@ def list_products():
     return get_all_products()
 
 
-@router.post('/')
+@router.post('/', response_model=ProductDB)
 def post_product(product: Product):
     try:
         return create_product(product)
@@ -37,12 +37,7 @@ def read_product_by_uuid(product_uuid: str):
 @router.patch('/{product_uuid}/', response_model=ProductDB)
 def patch_product_by_uuid(product_uuid: str, product: Product):
     try:
-        print(get_product_by_uuid(product_uuid))
-        stored_product = get_product_by_uuid(product_uuid)
-        update_data = product.dict(exclude_unset=True)
-        print(update_data)
-        updated_product = Product(**stored_product).copy(update=update_data)
-        return update_product_by_uuid(uuid=product_uuid, product=updated_product)
+        return update_product_by_uuid(uuid=product_uuid, product=product)
     except DocumentNotFound as e:
         raise HTTPException(status_code=404, detail=e.message)
 

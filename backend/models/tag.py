@@ -9,7 +9,7 @@ class Tag(BaseModel):
     attrs: List[Attribute]
 
 
-class TagDB(BaseModel):
+class TagDB(Tag):
     id: int
     attrs: List[AttributeDB]
 

@@ -29,3 +29,10 @@ def get_or_create(bucket: Bucket, model: BaseModel):
     if not document:
         document = upsert(bucket, model)
     return document
+
+
+def get_or_bulk_create(bucket: Bucket, models: List[BaseModel]):
+    result_models = list()
+    for model in models:
+        result_models.append(get_or_create(bucket, model))
+    return result_models
