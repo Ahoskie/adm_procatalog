@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from models.product import Product, ProductDB
 from services.products import (create_product, get_all_products, get_product_by_uuid, update_product_by_uuid,
                                remove_product_by_uuid)
-from services.exceptions import DocumentNotFound, DocumentAlreadyExists
+from services.exceptions import DocumentNotFound, InvalidVariantAttribute
 
 
 router = APIRouter(
@@ -14,16 +14,18 @@ router = APIRouter(
 
 
 @router.get('/', response_model=List[ProductDB])
-def list_products():
-    return get_all_products()
+def list_products(skip=0, limit=30):
+    return get_all_products(skip, limit)
 
 
 @router.post('/', response_model=ProductDB)
 def post_product(product: Product):
     try:
         return create_product(product)
-    except DocumentAlreadyExists as e:
+    except InvalidVariantAttribute as e:
         raise HTTPException(status_code=400, detail=e.message)
+    except DocumentNotFound as e:
+        raise HTTPException(status_code=404, detail=e.message)
 
 
 @router.get('/{product_uuid}/', response_model=ProductDB)
@@ -34,17 +36,19 @@ def read_product_by_uuid(product_uuid: str):
         raise HTTPException(status_code=404, detail=e.message)
 
 
-@router.patch('/{product_uuid}/', response_model=ProductDB)
-def patch_product_by_uuid(product_uuid: str, product: Product):
+@router.put('/{product_uuid}/', response_model=ProductDB)
+def put_product_by_uuid(product_uuid: str, product: Product):
     try:
         return update_product_by_uuid(uuid=product_uuid, product=product)
     except DocumentNotFound as e:
         raise HTTPException(status_code=404, detail=e.message)
+    except InvalidVariantAttribute as e:
+        raise HTTPException(status_code=400, detail=e.message)
 
 
 @router.delete('/{product_uuid}/', response_model=ProductDB)
 def delete_product_by_uuid(product_uuid: str):
     try:
-        return delete_product_by_uuid(uuid=product_uuid)
+        return remove_product_by_uuid(product_uuid)
     except DocumentNotFound as e:
         raise HTTPException(status_code=404, detail=e.message)

@@ -1,6 +1,6 @@
 from db.buckets import Buckets
 from core.config import BRANDS_BUCKET
-from .exceptions import DocumentAlreadyExists, DocumentNotFound
+from .exceptions import DocumentAlreadyExists
 from . import upsert, get_all, filter_query, update, get, delete
 
 

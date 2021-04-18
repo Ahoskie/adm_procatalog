@@ -27,6 +27,7 @@ def initialize_cluster():
 
 
 def initialize_buckets():
+    from db.buckets import Buckets
     cluster = ClusterHolder.cluster
     if cluster:
         for bucket_name in BUCKETS:
@@ -46,3 +47,4 @@ def initialize_buckets():
                 result = bucket.query(
                     f'CREATE PRIMARY INDEX `{bucket_name}_index` ON `{bucket_name}` USING GSI',
                 )
+            Buckets.get_bucket(bucket_name)

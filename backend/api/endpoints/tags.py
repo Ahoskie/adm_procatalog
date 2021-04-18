@@ -33,8 +33,8 @@ def post_tag(tag: Tag):
     return tag
 
 
-@router.patch('/{tag_id}/')
-def patch_tag(tag_id: str, tag: Tag):
+@router.put('/{tag_id}/')
+def put_tag(tag_id: str, tag: Tag):
     try:
         tag = update_tag_by_id(tag_id, tag)
     except DocumentNotFound as e:

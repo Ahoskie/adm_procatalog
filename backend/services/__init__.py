@@ -1,5 +1,4 @@
 from typing import TypeVar
-from uuid import UUID, uuid4
 
 from pydantic import BaseModel
 from couchbase.cluster import Bucket
@@ -8,6 +7,7 @@ from fastapi.encoders import jsonable_encoder
 
 from core.config import INT_COUNTER_NAME
 from services.exceptions import DocumentNotFound
+from db.utils import fulltext_search
 
 
 PydanticModel = TypeVar('PydanticModel', bound=BaseModel)
@@ -61,7 +61,7 @@ def delete(bucket: Bucket, key):
     return result.value
 
 
-def get_all(bucket: Bucket, skip: int = 0, limit: int = 50):
+def get_all(bucket: Bucket, skip: int = 0, limit: int = 30):
     query_result = bucket.query(
         f'SELECT META(b).id as id, b.* FROM {bucket.name} AS b WHERE META(b).id != "{INT_COUNTER_NAME}"',
         limit=limit, skip=skip
@@ -70,13 +70,19 @@ def get_all(bucket: Bucket, skip: int = 0, limit: int = 50):
     return result
 
 
-def filter_query(bucket: Bucket, skip: int = 0, limit: int = 100, **kwargs):
+def filter_query(bucket: Bucket, skip: int = 0, limit: int = 30, **kwargs):
     query_string = f'SELECT META(b).id AS id,  b.* FROM {bucket.name} as b WHERE ' + \
                    ' '.join([f'{key}="{kwargs[key]}"' for key in kwargs])
     query_result = bucket.query(query_string, limit=limit, skip=skip)
     return [row for row in query_result]
 
 
-def custom_query(bucket: Bucket, skip: int = 0, limit: int = 100, query_string=''):
+def custom_query(bucket: Bucket, skip: int = 0, limit: int = 30, query_string=''):
     query_result = bucket.query(query_string, limit=limit, skip=skip)
     return [row for row in query_result]
+
+
+def fulltext_in_bucket(bucket: Bucket, limit: int = 30, search_string=''):
+    index = f'{bucket.name}_index'
+    search_result = fulltext_search(index=index, limit=limit, search_string=search_string)
+    return search_result

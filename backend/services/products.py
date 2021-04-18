@@ -4,47 +4,67 @@ from couchbase.exceptions import DocumentNotFoundException
 
 from db.buckets import Buckets
 from core.config import PRODUCTS_BUCKET, BRANDS_BUCKET, TAGS_BUCKET
-from services import upsert, get, get_all, filter_query, update, delete, custom_query
-from services.utils import get_or_create
-from services.exceptions import DocumentNotFound, DocumentAlreadyExists, InvalidVariantAttribute
+from services import upsert, get, get_all, delete, custom_query, fulltext_in_bucket
+from services.utils import get_or_create, get_document_if_exists
+from services.exceptions import DocumentNotFound, InvalidVariantAttribute
 from models.attribute import AttributeWithValueDB
+from models.product import VariantDB
 from models.tag import TagDBNoAttributes
 
 
-def create_product(product):
-    bucket = Buckets.get_bucket(PRODUCTS_BUCKET)
+def validate_product_variants(product_variants: list, tags: list):
+    tags_names = [tag['name'] for tag in tags]
+
+    tags_attrs = custom_query(
+        Buckets.get_bucket(TAGS_BUCKET),
+        query_string=f'SELECT ARRAY_FLATTEN(ARRAY_AGG(t.attrs), 1) FROM tag AS t WHERE t.name IN {tags_names}'
+    )[0]['$1']
+    tags_attrs = tags_attrs if tags_attrs else []
+    available_attrs = dict()
+    for attr in tags_attrs:
+        available_attrs[attr['name']] = attr
+
+    variants_from_db = list()
+    for variant in product_variants:
+        attrs_from_db = list()
+        for variant_attr in variant.attributes_values:
+            if variant_attr.name not in available_attrs:
+                raise InvalidVariantAttribute(variant_attr.name, available_attrs=tags_attrs)
+            attr_id = available_attrs[variant_attr.name]['id']
+            attr_from_db = AttributeWithValueDB(id=attr_id, **variant_attr.dict())
+            attrs_from_db.append(attr_from_db)
+        variant_from_db = VariantDB(id=str(uuid4()), attributes_values=attrs_from_db)
+        variants_from_db.append(variant_from_db)
+    return variants_from_db
+
+
+def get_validated_product(product):
     brand = get_or_create(Buckets.get_bucket(BRANDS_BUCKET), product.brand)
     product.brand = brand
 
     tags = list()
     for tag in product.tags:
-        db_tag = TagDBNoAttributes(**get_or_create(Buckets.get_bucket(TAGS_BUCKET), tag))
-        tags.append(db_tag.dict())
+        db_tag = get_document_if_exists(Buckets.get_bucket(TAGS_BUCKET), tag)
+        if not db_tag:
+            raise DocumentNotFound(tag.name)
+        tags.append(TagDBNoAttributes(**db_tag).dict())
     product.tags = tags
 
-    tags_names = [f'{tag["name"]}' for tag in tags]
-    tags_attributes = custom_query(
-        Buckets.get_bucket(TAGS_BUCKET),
-        query_string=f'SELECT ARRAY_FLATTEN(ARRAY_AGG(t.attrs), 1) FROM tag AS t WHERE t.name IN {tags_names}'
-    )[0]['$1']
-    if tags_attributes:
-        for variant in product.variants:
-            variant_attrs = list()
-            for attr in variant.attributes_values:
-                if attr.name not in [tag_attr['name'] for tag_attr in tags_attributes]:
-                    raise InvalidVariantAttribute(attr, available_attrs=tags_attributes)
-                attr_id = [attribute['id'] for attribute in tags_attributes if attribute['name'] == attr.name][0]
-                db_attr = AttributeWithValueDB(**attr.dict(), id=attr_id)
-                variant_attrs.append(db_attr)
-            variant.attributes_values = variant_attrs
-            # variant.id = str(uuid4())
+    if product.variants:
+        product.variants = validate_product_variants(product.variants, tags)
+    return product
+
+
+def create_product(product):
+    bucket = Buckets.get_bucket(PRODUCTS_BUCKET)
+    product = get_validated_product(product)
     result_product = upsert(bucket, product, key=str(uuid4()))
     return result_product
 
 
-def get_all_products():
+def get_all_products(skip, limit):
     bucket = Buckets.get_bucket(PRODUCTS_BUCKET)
-    return get_all(bucket)
+    return get_all(bucket, skip=skip, limit=limit)
 
 
 def get_product_by_uuid(uuid):
@@ -58,10 +78,9 @@ def get_product_by_uuid(uuid):
 
 def update_product_by_uuid(uuid, product):
     bucket = Buckets.get_bucket(PRODUCTS_BUCKET)
-    stored_product = get_product_by_uuid(uuid)
-    update_data = product.dict(exclude_unset=True)
-    # updated_product = Product(**stored_product).copy(update=update_data)
-    # return update(bucket, product, uuid)
+    product = get_validated_product(product)
+    result_product = upsert(bucket, product, str(uuid))
+    return result_product
 
 
 def remove_product_by_uuid(uuid):
@@ -70,3 +89,8 @@ def remove_product_by_uuid(uuid):
         return delete(bucket, uuid)
     except DocumentNotFoundException:
         raise DocumentNotFound(uuid)
+
+
+def fulltext_find_product(limit=30, search_string=''):
+    bucket = Buckets.get_bucket(PRODUCTS_BUCKET)
+    return fulltext_in_bucket(bucket, limit=limit, search_string=search_string)

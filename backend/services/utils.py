@@ -1,9 +1,9 @@
+from datetime import datetime
 from typing import List
 
 from couchbase.cluster import Bucket
 from pydantic import BaseModel
 
-from db.buckets import Buckets
 from . import filter_query, upsert
 
 
@@ -16,6 +16,15 @@ def output_pydantic_model(model: BaseModel):
             return model.parse_obj(db_result)
         return wrapper
     return generate_model
+
+
+def print_execution_time(func):
+    def get_timing(*args, **kwargs):
+        start = datetime.now()
+        func_result = func(*args, **kwargs)
+        print(datetime.now() - start)
+        return func_result
+    return get_timing
 
 
 def get_document_if_exists(bucket: Bucket, model: BaseModel):
