@@ -12,7 +12,7 @@ router = APIRouter(
 
 
 @router.get('/')
-def list_tags(skip: int = 0, limit: int = 0):
+def list_tags(skip: int = 0, limit: int = 30):
     return get_all_tags(skip, limit)
 
 

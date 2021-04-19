@@ -62,7 +62,7 @@ def create_product(product):
     return result_product
 
 
-def get_all_products(skip, limit):
+def get_all_products(skip=0, limit=30):
     bucket = Buckets.get_bucket(PRODUCTS_BUCKET)
     return get_all(bucket, skip=skip, limit=limit)
 
