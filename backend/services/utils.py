@@ -45,3 +45,10 @@ def get_or_bulk_create(bucket: Bucket, models: List[BaseModel]):
     for model in models:
         result_models.append(get_or_create(bucket, model))
     return result_models
+
+
+def bulk_create(bucket: Bucket, models: List[BaseModel]):
+    result_models = list()
+    for model in models:
+        result_models.append(upsert(bucket, model))
+    return result_models

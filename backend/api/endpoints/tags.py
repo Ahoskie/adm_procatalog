@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import APIRouter, HTTPException
 
 from models.product import Tag, TagDB
@@ -11,12 +12,12 @@ router = APIRouter(
 )
 
 
-@router.get('/')
+@router.get('/', response_model=List[TagDB])
 def list_tags(skip: int = 0, limit: int = 30):
     return get_all_tags(skip, limit)
 
 
-@router.get('/{tag_id}/')
+@router.get('/{tag_id}/', response_model=TagDB)
 def read_tag_by_id(tag_id: str):
     try:
         return get_tag_by_id(tag_id=tag_id)
@@ -33,7 +34,7 @@ def post_tag(tag: Tag):
     return tag
 
 
-@router.put('/{tag_id}/')
+@router.put('/{tag_id}/', response_model=TagDB)
 def put_tag(tag_id: str, tag: Tag):
     try:
         tag = update_tag_by_id(tag_id, tag)

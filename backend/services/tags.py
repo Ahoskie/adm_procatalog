@@ -1,9 +1,8 @@
 from db.buckets import Buckets
 from core.config import TAGS_BUCKET, ATTRIBUTE_BUCKET
 from services import upsert, get, get_all, update, delete, filter_query
-from services.utils import get_document_if_exists, get_or_create, get_or_bulk_create
+from services.utils import bulk_create
 from services.exceptions import DocumentAlreadyExists, DocumentNotFound
-from models.tag import TagNoAttributes, TagDB
 
 
 def create_tag(tag):
@@ -11,7 +10,7 @@ def create_tag(tag):
     tags = filter_query(bucket, name=tag.name)
     if tags:
         raise DocumentAlreadyExists(tag.name)
-    tag.attrs = get_or_bulk_create(Buckets.get_bucket(ATTRIBUTE_BUCKET), tag.attrs)
+    tag.attrs = bulk_create(Buckets.get_bucket(ATTRIBUTE_BUCKET), tag.attrs)
     return upsert(bucket, tag)
 
 
@@ -29,7 +28,7 @@ def get_tag_by_id(tag_id):
 
 def update_tag_by_id(tag_id, tag):
     bucket = Buckets.get_bucket(TAGS_BUCKET)
-    tag.attrs = get_or_bulk_create(Buckets.get_bucket(ATTRIBUTE_BUCKET), tag.attrs)
+    tag.attrs = bulk_create(Buckets.get_bucket(ATTRIBUTE_BUCKET), tag.attrs)
     updated_tag = update(bucket, tag, tag_id)
     if not updated_tag:
         raise DocumentNotFound(tag_id)
