@@ -15,9 +15,9 @@ def create_tag(tag):
     return upsert(bucket, tag)
 
 
-def get_all_tags():
+def get_all_tags(skip=0, limit=0):
     bucket = Buckets.get_bucket(TAGS_BUCKET)
-    documents = get_all(bucket)
+    documents = get_all(bucket, skip=skip, limit=limit)
     return documents
 
 

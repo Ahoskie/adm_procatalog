@@ -12,8 +12,8 @@ router = APIRouter(
 
 
 @router.get('/')
-def list_tags():
-    return get_all_tags()
+def list_tags(skip: int = 0, limit: int = 0):
+    return get_all_tags(skip, limit)
 
 
 @router.get('/{tag_id}/')

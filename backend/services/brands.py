@@ -4,9 +4,9 @@ from .exceptions import DocumentAlreadyExists
 from . import upsert, get_all, filter_query, update, get, delete
 
 
-def get_all_brands():
+def get_all_brands(skip, limit):
     bucket = Buckets.get_bucket(BRANDS_BUCKET)
-    return get_all(bucket)
+    return get_all(bucket, skip=skip, limit=limit)
 
 
 def get_brand_by_id(brand_id):

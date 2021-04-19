@@ -12,8 +12,8 @@ router = APIRouter(
 
 
 @router.get('/')
-def list_brands():
-    return get_all_brands()
+def list_brands(skip: int = 0, limit: int = 30):
+    return get_all_brands(skip, limit)
 
 
 @router.get('/{brand_id}/')

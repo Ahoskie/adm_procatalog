@@ -63,8 +63,8 @@ def delete(bucket: Bucket, key):
 
 def get_all(bucket: Bucket, skip: int = 0, limit: int = 30):
     query_result = bucket.query(
-        f'SELECT META(b).id as id, b.* FROM {bucket.name} AS b WHERE META(b).id != "{INT_COUNTER_NAME}"',
-        limit=limit, skip=skip
+        f'SELECT META(b).id as id, b.* FROM {bucket.name} AS b WHERE META(b).id != "{INT_COUNTER_NAME}" ' +
+        f'LIMIT {limit} OFFSET {skip}'
     )
     result = [row for row in query_result]
     return result
@@ -73,12 +73,12 @@ def get_all(bucket: Bucket, skip: int = 0, limit: int = 30):
 def filter_query(bucket: Bucket, skip: int = 0, limit: int = 30, **kwargs):
     query_string = f'SELECT META(b).id AS id,  b.* FROM {bucket.name} as b WHERE ' + \
                    ' '.join([f'{key}="{kwargs[key]}"' for key in kwargs])
-    query_result = bucket.query(query_string, limit=limit, skip=skip)
+    query_result = bucket.query(query_string + f'LIMIT {limit} OFFSET {skip}')
     return [row for row in query_result]
 
 
 def custom_query(bucket: Bucket, skip: int = 0, limit: int = 30, query_string=''):
-    query_result = bucket.query(query_string, limit=limit, skip=skip)
+    query_result = bucket.query(query_string + f'LIMIT {limit} OFFSET {skip}')
     return [row for row in query_result]
 
 
