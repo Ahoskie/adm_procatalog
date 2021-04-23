@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 
 from .attribute import Attribute, AttributeDB
@@ -6,7 +6,12 @@ from .attribute import Attribute, AttributeDB
 
 class Tag(BaseModel):
     name: str
-    attrs: List[Attribute]
+    attrs: List[Attribute] = []
+
+
+class TagPartialUpdate(BaseModel):
+    name: Optional[str]
+    attrs: Optional[List[Attribute]]
 
 
 class TagDB(Tag):

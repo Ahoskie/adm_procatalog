@@ -4,3 +4,5 @@ fastapi~=0.63.0
 uvloop~=0.15.2
 httptools~=0.1.1
 couchbase~=3.0.10
+pytest~=6.2.3
+requests~=2.25.1

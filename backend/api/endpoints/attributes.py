@@ -1,7 +1,7 @@
 from typing import List
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 
-from models.attribute import Attribute, AttributeDB
+from models.attribute import Attribute, AttributeDB, AttributePartialUpdate
 from services.exceptions import DocumentNotFound, DocumentAlreadyExists
 from services.attributes import (create_attribute, get_all_attributes, get_attribute_by_id, update_attribute,
                                  remove_attribute)
@@ -35,8 +35,8 @@ def post_attr(attr: Attribute):
     return attr
 
 
-@router.put('/{attr_id}/', response_model=AttributeDB)
-def put_attr(attr_id: str, attr: Attribute):
+@router.patch('/{attr_id}/', response_model=AttributeDB)
+def patch_attr(attr_id: str, attr: AttributePartialUpdate):
     try:
         attr = update_attribute(attr_id, attr)
     except DocumentNotFound as e:
@@ -52,4 +52,4 @@ def delete_attr(attr_id: str):
         attr = remove_attribute(attr_id)
     except DocumentNotFound as e:
         raise HTTPException(status_code=404, detail=e.message)
-    return attr
+    return Response(status_code=204)

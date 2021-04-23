@@ -1,7 +1,7 @@
 from typing import List
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 
-from models.product import Brand, BrandDB
+from models.brand import Brand, BrandDB, BrandPartialUpdate
 from services.exceptions import DocumentNotFound, DocumentAlreadyExists
 from services.brands import get_brand_by_id, get_all_brands, create_brand, update_brand, remove_brand
 
@@ -34,8 +34,8 @@ def post_brand(brand: Brand):
     return brand
 
 
-@router.put('/{brand_id}/', response_model=BrandDB)
-def patch_brand(brand_id: str, brand: Brand):
+@router.patch('/{brand_id}/', response_model=BrandDB)
+def patch_brand(brand_id: str, brand: BrandPartialUpdate):
     try:
         brand = update_brand(brand_id, brand)
     except DocumentNotFound as e:
@@ -51,4 +51,4 @@ def delete_brand(brand_id: str):
         brand = remove_brand(brand_id)
     except DocumentNotFound as e:
         raise HTTPException(status_code=404, detail=e.message)
-    return brand
+    return Response(status_code=204)

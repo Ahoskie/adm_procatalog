@@ -3,8 +3,9 @@ from uuid import uuid4
 from couchbase.exceptions import DocumentNotFoundException
 
 from db.buckets import Buckets
+from db.exceptions import UniqueConstraintViolation
 from core.config import PRODUCTS_BUCKET, BRANDS_BUCKET, TAGS_BUCKET
-from services import upsert, get, get_all, delete, custom_query, fulltext_in_bucket
+from services import upsert, get, get_all, delete, custom_query, fulltext_in_bucket, update, filter_query
 from services.utils import get_or_create, get_document_if_exists
 from services.exceptions import DocumentNotFound, InvalidVariantAttribute
 from models.attribute import AttributeWithValueDB
@@ -39,15 +40,17 @@ def validate_product_variants(product_variants: list, tags: list):
 
 
 def get_validated_product(product):
-    brand = get_or_create(Buckets.get_bucket(BRANDS_BUCKET), product.brand)
-    product.brand = brand
+    if product.brand:
+        brand = get_or_create(Buckets.get_bucket(BRANDS_BUCKET), product.brand)
+        product.brand = brand
 
     tags = list()
-    for tag in product.tags:
-        db_tag = get_document_if_exists(Buckets.get_bucket(TAGS_BUCKET), tag)
-        if not db_tag:
-            raise DocumentNotFound(tag.name)
-        tags.append(TagDBNoAttributes(**db_tag).dict())
+    if product.tags:
+        for tag in product.tags:
+            db_tag = get_document_if_exists(Buckets.get_bucket(TAGS_BUCKET), tag)
+            if not db_tag:
+                raise DocumentNotFound(tag.name)
+            tags.append(TagDBNoAttributes(**db_tag).dict())
     product.tags = tags
 
     if product.variants:
@@ -57,6 +60,10 @@ def get_validated_product(product):
 
 def create_product(product):
     bucket = Buckets.get_bucket(PRODUCTS_BUCKET)
+    result = custom_query(bucket, query_string=f'SELECT * FROM product AS p WHERE p.name="{product.name}" '
+                                               f'AND p.brand.name="{product.brand.name}"')
+    if result:
+        raise UniqueConstraintViolation(['name', 'brand'])
     product = get_validated_product(product)
     result_product = upsert(bucket, product, key=str(uuid4()))
     return result_product
@@ -78,8 +85,20 @@ def get_product_by_uuid(uuid):
 
 def update_product_by_uuid(uuid, product):
     bucket = Buckets.get_bucket(PRODUCTS_BUCKET)
+    db_product = get(bucket, uuid)
+    name = db_product['name']
+    brand_name = db_product['brand']['name']
+    if product.name:
+        name = product.name
+    if product.brand:
+        brand_name = product.brand.name
+    if name != db_product['name'] or brand_name != db_product['brand']['name']:
+        result = custom_query(bucket, query_string=f'SELECT * FROM product AS p WHERE p.name="{name}" '
+                                                   f'AND p.brand.name="{brand_name}"')
+        if result:
+            raise UniqueConstraintViolation(['name', 'brand'])
     product = get_validated_product(product)
-    result_product = upsert(bucket, product, str(uuid))
+    result_product = update(bucket, product, str(uuid))
     return result_product
 
 

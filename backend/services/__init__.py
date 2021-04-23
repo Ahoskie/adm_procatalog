@@ -14,10 +14,11 @@ PydanticModel = TypeVar('PydanticModel', bound=BaseModel)
 
 
 def get_next_id(bucket: Bucket):
-    next_id = bucket.counter(INT_COUNTER_NAME, delta=1, initial=1).value
+    next_id = bucket.counter(INT_COUNTER_NAME, delta=1, initial=1)
+    next_id = next_id.value
     if next_id == 1:
         query_result = bucket.query(
-            f'SELECT MAX(META(b).id) FROM {bucket.name} AS b'
+            f'SELECT MAX(TONUMBER(META(b).id)) FROM {bucket.name} AS b'
         )
         actual_last_id = query_result.get_single_result()['$1']
         if actual_last_id:
@@ -37,7 +38,18 @@ def upsert(bucket: Bucket, value: PydanticModel, key=None):
 
 
 def update(bucket: Bucket, value: PydanticModel, key):
-    result = bucket.upsert(key, jsonable_encoder(value))
+    try:
+        db_object = get(bucket, key)
+    except DocumentNotFoundException:
+        raise DocumentNotFound(key)
+
+    incoming_data = jsonable_encoder(value)
+    for attr in db_object:
+        db_attr = db_object[attr]
+        if attr != 'id' and not incoming_data[attr]:
+            incoming_data[attr] = db_attr
+
+    result = bucket.upsert(key, incoming_data)
     if result.success:
         return_value = get(bucket, key)
         return return_value

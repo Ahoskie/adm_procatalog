@@ -1,13 +1,14 @@
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 from uuid import UUID
 
-from .brand import Brand, BrandDB
-from .tag import Tag, TagDB, TagDBNoAttributes, TagNoAttributes
-from .attribute import AttributeWithValue, AttributeWithValueDB
+from models.brand import Brand, BrandDB
+from models.tag import TagDBNoAttributes, TagNoAttributes
+from models.attribute import AttributeWithValue, AttributeWithValueDB
 
 
 class Variant(BaseModel):
+    name: str
     attributes_values: List[AttributeWithValue]
 
 
@@ -21,6 +22,13 @@ class Product(BaseModel):
     brand: Brand
     tags: List[TagNoAttributes]
     variants: List[Variant]
+
+
+class ProductPartialUpdate(BaseModel):
+    name: Optional[str]
+    brand: Optional[Brand]
+    tags: Optional[List[TagNoAttributes]]
+    variants: Optional[List[Variant]]
 
 
 class ProductDB(Product):

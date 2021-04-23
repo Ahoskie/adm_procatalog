@@ -41,10 +41,16 @@ def initialize_buckets():
                 time.sleep(1)
                 bucket = cluster.bucket(bucket_name)
             query_string = f'SELECT * FROM system:indexes WHERE name="{bucket_name}_index"'
-            query_results = bucket.query(query_string)
-            indexes = [row for row in query_results]
-            if not indexes:
-                result = bucket.query(
-                    f'CREATE PRIMARY INDEX `{bucket_name}_index` ON `{bucket_name}` USING GSI',
-                )
-            Buckets.get_bucket(bucket_name)
+
+            max_tries = 5
+            for i in range(max_tries):
+                try:
+                    query_results = bucket.query(query_string)
+                    indexes = [row for row in query_results]
+                    if not indexes:
+                        result = bucket.query(
+                            f'CREATE PRIMARY INDEX `{bucket_name}_index` ON `{bucket_name}` USING GSI',
+                        )
+                    Buckets.get_bucket(bucket_name)
+                except Exception:
+                    time.sleep(1)

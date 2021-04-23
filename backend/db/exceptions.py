@@ -14,3 +14,8 @@ class DatabaseException(Exception):
 class BucketNotFound(DatabaseException):
     def get_message(self, payload):
         return f'Bucket with name "{payload}" was not found. You may need to create it.'
+
+
+class UniqueConstraintViolation(DatabaseException):
+    def get_message(self, payload: list):
+        return f'Fields {", ".join(payload)} together must make a unique pair.'

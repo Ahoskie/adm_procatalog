@@ -1,7 +1,7 @@
 from typing import List
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 
-from models.product import Tag, TagDB
+from models.tag import Tag, TagDB, TagPartialUpdate
 from services.exceptions import DocumentNotFound, DocumentAlreadyExists
 from services.tags import create_tag, get_all_tags, get_tag_by_id, update_tag_by_id, remove_tag_by_id
 
@@ -34,8 +34,8 @@ def post_tag(tag: Tag):
     return tag
 
 
-@router.put('/{tag_id}/', response_model=TagDB)
-def put_tag(tag_id: str, tag: Tag):
+@router.patch('/{tag_id}/', response_model=TagDB)
+def patch_tag(tag_id: str, tag: TagPartialUpdate):
     try:
         tag = update_tag_by_id(tag_id, tag)
     except DocumentNotFound as e:
@@ -51,4 +51,4 @@ def delete_tag(tag_id: str):
         tag = remove_tag_by_id(tag_id)
     except DocumentNotFound as e:
         raise HTTPException(status_code=404, detail=e.message)
-    return tag
+    return Response(status_code=204)
