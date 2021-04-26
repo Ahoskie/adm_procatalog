@@ -13,31 +13,31 @@ router = APIRouter(
 
 
 @router.get('/', response_model=List[BrandDB])
-def list_brands(skip: int = 0, limit: int = 30):
-    return get_all_brands(skip, limit)
+async def list_brands(skip: int = 0, limit: int = 30):
+    return await get_all_brands(skip, limit)
 
 
 @router.get('/{brand_id}/', response_model=BrandDB)
-def read_brand_by_id(brand_id: str):
+async def read_brand_by_id(brand_id: str):
     try:
-        return get_brand_by_id(brand_id=brand_id)
+        return await get_brand_by_id(brand_id=brand_id)
     except DocumentNotFound as e:
         raise HTTPException(status_code=404, detail=e.message)
 
 
 @router.post('/', response_model=BrandDB)
-def post_brand(brand: Brand):
+async def post_brand(brand: Brand):
     try:
-        brand = create_brand(brand)
+        brand = await create_brand(brand)
     except DocumentAlreadyExists as e:
         raise HTTPException(status_code=400, detail=e.message)
     return brand
 
 
 @router.patch('/{brand_id}/', response_model=BrandDB)
-def patch_brand(brand_id: str, brand: BrandPartialUpdate):
+async def patch_brand(brand_id: str, brand: BrandPartialUpdate):
     try:
-        brand = update_brand(brand_id, brand)
+        brand = await update_brand(brand_id, brand)
     except DocumentNotFound as e:
         raise HTTPException(status_code=404, detail=e.message)
     except DocumentAlreadyExists as e:
@@ -46,9 +46,9 @@ def patch_brand(brand_id: str, brand: BrandPartialUpdate):
 
 
 @router.delete('/{brand_id}/')
-def delete_brand(brand_id: str):
+async def delete_brand(brand_id: str):
     try:
-        brand = remove_brand(brand_id)
+        brand = await remove_brand(brand_id)
     except DocumentNotFound as e:
         raise HTTPException(status_code=404, detail=e.message)
     return Response(status_code=204)

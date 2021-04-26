@@ -12,4 +12,4 @@ app.include_router(api_router)
 async def startup_event():
     cluster = initialize_cluster()
     ClusterHolder.cluster = cluster
-    initialize_buckets()
+    await initialize_buckets()

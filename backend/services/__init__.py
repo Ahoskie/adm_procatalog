@@ -1,45 +1,52 @@
 from typing import TypeVar
 
 from pydantic import BaseModel
-from couchbase.cluster import Bucket
+from acouchbase.cluster import Bucket
 from couchbase.exceptions import DocumentNotFoundException
 from fastapi.encoders import jsonable_encoder
 
 from core.config import INT_COUNTER_NAME
 from services.exceptions import DocumentNotFound
 from db.utils import fulltext_search
+from db import ClusterHolder
 
 
 PydanticModel = TypeVar('PydanticModel', bound=BaseModel)
 
 
-def get_next_id(bucket: Bucket):
-    next_id = bucket.counter(INT_COUNTER_NAME, delta=1, initial=1)
-    next_id = next_id.value
-    if next_id == 1:
-        query_result = bucket.query(
+async def get_next_id(bucket: Bucket):
+    value = 0
+    try:
+        next_id = await bucket.get(INT_COUNTER_NAME)
+        value = next_id.value + 1
+        await bucket.upsert(INT_COUNTER_NAME, value)
+    except DocumentNotFoundException:
+        await bucket.upsert(INT_COUNTER_NAME, jsonable_encoder(1))
+        query_result = ClusterHolder.cluster.query(
             f'SELECT MAX(TONUMBER(META(b).id)) FROM {bucket.name} AS b'
         )
-        actual_last_id = query_result.get_single_result()['$1']
+        actual_last_id = 1
+        async for row in query_result:
+            actual_last_id = row['$1']
         if actual_last_id:
             if int(actual_last_id) > 0:
-                next_id = int(actual_last_id) + 1
-                bucket.upsert(INT_COUNTER_NAME, next_id)
-    return str(next_id)
+                value = int(actual_last_id) + 1
+                await bucket.upsert(INT_COUNTER_NAME, value)
+    return str(value)
 
 
-def upsert(bucket: Bucket, value: PydanticModel, key=None):
+async def upsert(bucket: Bucket, value: PydanticModel, key=None):
     if not key:
-        key = get_next_id(bucket)
-    result = bucket.upsert(key, jsonable_encoder(value))
+        key = await get_next_id(bucket)
+    result = await bucket.upsert(key, jsonable_encoder(value))
     if result.success:
-        return_value = get(bucket, key)
+        return_value = await get(bucket, key)
         return return_value
 
 
-def update(bucket: Bucket, value: PydanticModel, key):
+async def update(bucket: Bucket, value: PydanticModel, key):
     try:
-        db_object = get(bucket, key)
+        db_object = await get(bucket, key)
     except DocumentNotFoundException:
         raise DocumentNotFound(key)
 
@@ -49,16 +56,16 @@ def update(bucket: Bucket, value: PydanticModel, key):
         if attr != 'id' and not incoming_data[attr]:
             incoming_data[attr] = db_attr
 
-    result = bucket.upsert(key, incoming_data)
+    result = await bucket.upsert(key, incoming_data)
     if result.success:
-        return_value = get(bucket, key)
+        return_value = await get(bucket, key)
         return return_value
 
 
-def get(bucket: Bucket, key):
+async def get(bucket: Bucket, key):
     if key != INT_COUNTER_NAME:
         try:
-            result = bucket.get(key)
+            result = await bucket.get(key)
             if result.success:
                 result.value['id'] = key
                 return result.value
@@ -67,31 +74,31 @@ def get(bucket: Bucket, key):
     raise DocumentNotFound(key)
 
 
-def delete(bucket: Bucket, key):
-    get(bucket, key)
-    result = bucket.remove(key)
+async def delete(bucket: Bucket, key):
+    await get(bucket, key)
+    result = await bucket.remove(key)
     return result.value
 
 
-def get_all(bucket: Bucket, skip: int = 0, limit: int = 30):
-    query_result = bucket.query(
+async def get_all(bucket: Bucket, skip: int = 0, limit: int = 30):
+    query_result = ClusterHolder.cluster.query(
         f'SELECT META(b).id as id, b.* FROM {bucket.name} AS b WHERE META(b).id != "{INT_COUNTER_NAME}" ' +
         f'LIMIT {limit} OFFSET {skip}'
     )
-    result = [row for row in query_result]
+    result = [row async for row in query_result]
     return result
 
 
-def filter_query(bucket: Bucket, skip: int = 0, limit: int = 30, **kwargs):
+async def filter_query(bucket: Bucket, skip: int = 0, limit: int = 30, **kwargs):
     query_string = f'SELECT META(b).id AS id,  b.* FROM {bucket.name} as b WHERE ' + \
                    ' '.join([f'{key}="{kwargs[key]}"' for key in kwargs])
-    query_result = bucket.query(query_string + f'LIMIT {limit} OFFSET {skip}')
-    return [row for row in query_result]
+    query_result = ClusterHolder.cluster.query(query_string + f' LIMIT {limit} OFFSET {skip}')
+    return [row async for row in query_result]
 
 
-def custom_query(bucket: Bucket, skip: int = 0, limit: int = 30, query_string=''):
-    query_result = bucket.query(query_string + f'LIMIT {limit} OFFSET {skip}')
-    return [row for row in query_result]
+async def custom_query(skip: int = 0, limit: int = 30, query_string=''):
+    query_result = ClusterHolder.cluster.query(query_string + f' LIMIT {limit} OFFSET {skip}')
+    return [row async for row in query_result]
 
 
 def fulltext_in_bucket(bucket: Bucket, limit: int = 30, search_string=''):

@@ -14,31 +14,31 @@ router = APIRouter(
 
 
 @router.get('/', response_model=List[AttributeDB])
-def list_attrs(skip: int = 0, limit: int = 30):
-    return get_all_attributes(skip, limit)
+async def list_attrs(skip: int = 0, limit: int = 30):
+    return await get_all_attributes(skip, limit)
 
 
 @router.get('/{attr_id}/', response_model=AttributeDB)
-def read_attr_by_id(attr_id: str):
+async def read_attr_by_id(attr_id: str):
     try:
-        return get_attribute_by_id(attr_id=attr_id)
+        return await get_attribute_by_id(attr_id=attr_id)
     except DocumentNotFound as e:
         raise HTTPException(status_code=404, detail=e.message)
 
 
 @router.post('/', response_model=AttributeDB)
-def post_attr(attr: Attribute):
+async def post_attr(attr: Attribute):
     try:
-        attr = create_attribute(attr)
+        attr = await create_attribute(attr)
     except DocumentAlreadyExists as e:
         raise HTTPException(status_code=400, detail=e.message)
     return attr
 
 
 @router.patch('/{attr_id}/', response_model=AttributeDB)
-def patch_attr(attr_id: str, attr: AttributePartialUpdate):
+async def patch_attr(attr_id: str, attr: AttributePartialUpdate):
     try:
-        attr = update_attribute(attr_id, attr)
+        attr = await update_attribute(attr_id, attr)
     except DocumentNotFound as e:
         raise HTTPException(status_code=404, detail=e.message)
     except DocumentAlreadyExists as e:
@@ -47,9 +47,9 @@ def patch_attr(attr_id: str, attr: AttributePartialUpdate):
 
 
 @router.delete('/{attr_id}/')
-def delete_attr(attr_id: str):
+async def delete_attr(attr_id: str):
     try:
-        attr = remove_attribute(attr_id)
+        attr = await remove_attribute(attr_id)
     except DocumentNotFound as e:
         raise HTTPException(status_code=404, detail=e.message)
     return Response(status_code=204)

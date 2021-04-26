@@ -13,14 +13,13 @@ from models.product import VariantDB
 from models.tag import TagDBNoAttributes
 
 
-def validate_product_variants(product_variants: list, tags: list):
+async def validate_product_variants(product_variants: list, tags: list):
     tags_names = [tag['name'] for tag in tags]
 
-    tags_attrs = custom_query(
-        Buckets.get_bucket(TAGS_BUCKET),
+    tags_attrs = await custom_query(
         query_string=f'SELECT ARRAY_FLATTEN(ARRAY_AGG(t.attrs), 1) FROM tag AS t WHERE t.name IN {tags_names}'
-    )[0]['$1']
-    tags_attrs = tags_attrs if tags_attrs else []
+    )
+    tags_attrs = tags_attrs[0]['$1'] if tags_attrs[0]['$1'] else []
     available_attrs = dict()
     for attr in tags_attrs:
         available_attrs[attr['name']] = attr
@@ -34,58 +33,58 @@ def validate_product_variants(product_variants: list, tags: list):
             attr_id = available_attrs[variant_attr.name]['id']
             attr_from_db = AttributeWithValueDB(id=attr_id, **variant_attr.dict())
             attrs_from_db.append(attr_from_db)
-        variant_from_db = VariantDB(id=str(uuid4()), attributes_values=attrs_from_db)
+        variant_from_db = VariantDB(id=str(uuid4()), attributes_values=attrs_from_db, name=variant.name)
         variants_from_db.append(variant_from_db)
     return variants_from_db
 
 
-def get_validated_product(product):
+async def get_validated_product(product):
     if product.brand:
-        brand = get_or_create(Buckets.get_bucket(BRANDS_BUCKET), product.brand)
+        brand = await get_or_create(await Buckets.get_bucket(BRANDS_BUCKET), product.brand)
         product.brand = brand
 
     tags = list()
     if product.tags:
         for tag in product.tags:
-            db_tag = get_document_if_exists(Buckets.get_bucket(TAGS_BUCKET), tag)
+            db_tag = await get_document_if_exists(await Buckets.get_bucket(TAGS_BUCKET), tag)
             if not db_tag:
                 raise DocumentNotFound(tag.name)
             tags.append(TagDBNoAttributes(**db_tag).dict())
     product.tags = tags
 
     if product.variants:
-        product.variants = validate_product_variants(product.variants, tags)
+        product.variants = await validate_product_variants(product.variants, tags)
     return product
 
 
-def create_product(product):
-    bucket = Buckets.get_bucket(PRODUCTS_BUCKET)
-    result = custom_query(bucket, query_string=f'SELECT * FROM product AS p WHERE p.name="{product.name}" '
-                                               f'AND p.brand.name="{product.brand.name}"')
+async def create_product(product):
+    bucket = await Buckets.get_bucket(PRODUCTS_BUCKET)
+    result = await custom_query(query_string=f'SELECT * FROM {bucket.name} AS p WHERE p.name="{product.name}" '
+                                             f'AND p.brand.name="{product.brand.name}"')
     if result:
         raise UniqueConstraintViolation(['name', 'brand'])
-    product = get_validated_product(product)
-    result_product = upsert(bucket, product, key=str(uuid4()))
+    product = await get_validated_product(product)
+    result_product = await upsert(bucket, product, key=str(uuid4()))
     return result_product
 
 
-def get_all_products(skip=0, limit=30):
-    bucket = Buckets.get_bucket(PRODUCTS_BUCKET)
-    return get_all(bucket, skip=skip, limit=limit)
+async def get_all_products(skip=0, limit=30):
+    bucket = await Buckets.get_bucket(PRODUCTS_BUCKET)
+    return await get_all(bucket, skip=skip, limit=limit)
 
 
-def get_product_by_uuid(uuid):
-    bucket = Buckets.get_bucket(PRODUCTS_BUCKET)
+async def get_product_by_uuid(uuid):
+    bucket = await Buckets.get_bucket(PRODUCTS_BUCKET)
     try:
-        product = get(bucket, uuid)
+        product = await get(bucket, uuid)
     except DocumentNotFoundException:
         raise DocumentNotFound(uuid)
     return product
 
 
-def update_product_by_uuid(uuid, product):
-    bucket = Buckets.get_bucket(PRODUCTS_BUCKET)
-    db_product = get(bucket, uuid)
+async def update_product_by_uuid(uuid, product):
+    bucket = await Buckets.get_bucket(PRODUCTS_BUCKET)
+    db_product = await get(bucket, uuid)
     name = db_product['name']
     brand_name = db_product['brand']['name']
     if product.name:
@@ -93,19 +92,19 @@ def update_product_by_uuid(uuid, product):
     if product.brand:
         brand_name = product.brand.name
     if name != db_product['name'] or brand_name != db_product['brand']['name']:
-        result = custom_query(bucket, query_string=f'SELECT * FROM product AS p WHERE p.name="{name}" '
-                                                   f'AND p.brand.name="{brand_name}"')
+        result = await custom_query(query_string=f'SELECT * FROM {bucket.name} AS p WHERE p.name="{name}" '
+                                                 f'AND p.brand.name="{brand_name}"')
         if result:
             raise UniqueConstraintViolation(['name', 'brand'])
-    product = get_validated_product(product)
-    result_product = update(bucket, product, str(uuid))
+    product = await get_validated_product(product)
+    result_product = await update(bucket, product, str(uuid))
     return result_product
 
 
-def remove_product_by_uuid(uuid):
-    bucket = Buckets.get_bucket(PRODUCTS_BUCKET)
+async def remove_product_by_uuid(uuid):
+    bucket = await Buckets.get_bucket(PRODUCTS_BUCKET)
     try:
-        return delete(bucket, uuid)
+        return await delete(bucket, uuid)
     except DocumentNotFoundException:
         raise DocumentNotFound(uuid)
 

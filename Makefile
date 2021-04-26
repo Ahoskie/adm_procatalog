@@ -18,4 +18,7 @@ test:
 	echo "Waiting for database startup"
 	sleep 15
 	docker-compose -f docker-compose.test.yml exec app-test python -m pytest -s
+	docker-compose -f docker-compose.test.yml exec app-test python tests/__init__.py
+	echo "Waiting for database flush"
+	sleep 2
 	docker-compose -f docker-compose.test.yml down --remove-orphans

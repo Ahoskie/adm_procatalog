@@ -27,29 +27,29 @@ def print_execution_time(func):
     return get_timing
 
 
-def get_document_if_exists(bucket: Bucket, model: BaseModel):
+async def get_document_if_exists(bucket: Bucket, model: BaseModel):
     data = model.dict()
-    result = filter_query(bucket, **data)
+    result = await filter_query(bucket, **data)
     return result[0] if result else None
 
 
-def get_or_create(bucket: Bucket, model: BaseModel):
-    document = get_document_if_exists(bucket, model)
+async def get_or_create(bucket: Bucket, model: BaseModel):
+    document = await get_document_if_exists(bucket, model)
     if not document:
-        document = upsert(bucket, model)
+        document = await upsert(bucket, model)
     return document
 
 
-def get_or_bulk_create(bucket: Bucket, models: List[BaseModel]):
+async def get_or_bulk_create(bucket: Bucket, models: List[BaseModel]):
     result_models = list()
     if models:
         for model in models:
-            result_models.append(get_or_create(bucket, model))
+            result_models.append(await get_or_create(bucket, model))
     return result_models
 
 
-def bulk_create(bucket: Bucket, models: List[BaseModel]):
+async def bulk_create(bucket: Bucket, models: List[BaseModel]):
     result_models = list()
     for model in models:
-        result_models.append(upsert(bucket, model))
+        result_models.append(await upsert(bucket, model))
     return result_models

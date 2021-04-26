@@ -11,11 +11,6 @@ from tests import flush_db
 
 client = TestClient(app)
 
-cluster = initialize_cluster()
-ClusterHolder.cluster = cluster
-initialize_buckets()
-
-
 attributes = [
     {
         'name': 'Attr1'
@@ -36,8 +31,9 @@ attributes = [
 
 
 def create_attribute(attr):
-    bucket = Buckets.get_bucket(ATTRIBUTE_BUCKET)
-    db_attr = upsert(bucket, attr)
+    # flush_db(client)
+    response = client.post('/api/attributes/', json=attr)
+    db_attr = response.json()
     attr['id'] = db_attr['id']
     return attr
 
@@ -45,19 +41,17 @@ def create_attribute(attr):
 def test_list_attributes():
     for attr in attributes:
         create_attribute(attr)
-        time.sleep(1)
     response = client.get('/api/attributes/')
     for attr in attributes:
         assert attr['name'] in [db_attr['name'] for db_attr in response.json()]
-    flush_db()
+    flush_db(client)
 
 
 def test_read_attribute():
     attr = create_attribute(attributes[0])
-    time.sleep(1)
     response = client.get(f'/api/attributes/{attr["id"]}/')
     assert attr['name'] == response.json()['name']
-    flush_db()
+    flush_db(client)
 
 
 def test_create_attribute():
@@ -65,22 +59,20 @@ def test_create_attribute():
     response = client.post('/api/attributes/', json=attr)
     assert attr['name'] == response.json()['name']
     assert 'id' in response.json()
-    flush_db()
+    flush_db(client)
 
 
 def test_create_existing_attribute():
-    attr = attributes[0]
-    client.post('/api/attributes/', json=attr)
+    attr = create_attribute(attributes[0])
     response = client.post('/api/attributes/', json=attr)
     assert 400 == response.status_code
-    flush_db()
+    flush_db(client)
 
 
 def test_delete_attribute():
     attr = create_attribute(attributes[0])
-    time.sleep(1)
     response_delete = client.delete(f'/api/attributes/{attr["id"]}/')
     response_get = client.get(f'/api/attributes/{attr["id"]}/')
     assert 204 == response_delete.status_code
     assert 404 == response_get.status_code
-    flush_db()
+    flush_db(client)

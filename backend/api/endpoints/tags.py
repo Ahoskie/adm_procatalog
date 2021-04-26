@@ -13,31 +13,31 @@ router = APIRouter(
 
 
 @router.get('/', response_model=List[TagDB])
-def list_tags(skip: int = 0, limit: int = 30):
-    return get_all_tags(skip, limit)
+async def list_tags(skip: int = 0, limit: int = 30):
+    return await get_all_tags(skip, limit)
 
 
 @router.get('/{tag_id}/', response_model=TagDB)
-def read_tag_by_id(tag_id: str):
+async def read_tag_by_id(tag_id: str):
     try:
-        return get_tag_by_id(tag_id=tag_id)
+        return await get_tag_by_id(tag_id=tag_id)
     except DocumentNotFound as e:
         raise HTTPException(status_code=404, detail=e.message)
 
 
 @router.post('/', response_model=TagDB)
-def post_tag(tag: Tag):
+async def post_tag(tag: Tag):
     try:
-        tag = create_tag(tag)
+        tag = await create_tag(tag)
     except DocumentAlreadyExists as e:
         raise HTTPException(status_code=400, detail=e.message)
     return tag
 
 
 @router.patch('/{tag_id}/', response_model=TagDB)
-def patch_tag(tag_id: str, tag: TagPartialUpdate):
+async def patch_tag(tag_id: str, tag: TagPartialUpdate):
     try:
-        tag = update_tag_by_id(tag_id, tag)
+        tag = await update_tag_by_id(tag_id, tag)
     except DocumentNotFound as e:
         raise HTTPException(status_code=404, detail=e.message)
     except DocumentAlreadyExists as e:
@@ -46,9 +46,9 @@ def patch_tag(tag_id: str, tag: TagPartialUpdate):
 
 
 @router.delete('/{tag_id}/')
-def delete_tag(tag_id: str):
+async def delete_tag(tag_id: str):
     try:
-        tag = remove_tag_by_id(tag_id)
+        tag = await remove_tag_by_id(tag_id)
     except DocumentNotFound as e:
         raise HTTPException(status_code=404, detail=e.message)
     return Response(status_code=204)

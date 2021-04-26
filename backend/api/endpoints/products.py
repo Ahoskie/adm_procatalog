@@ -15,14 +15,14 @@ router = APIRouter(
 
 
 @router.get('/', response_model=List[ProductDB])
-def list_products(skip=0, limit=30):
-    return get_all_products(skip, limit)
+async def list_products(skip=0, limit=30):
+    return await get_all_products(skip, limit)
 
 
 @router.post('/', response_model=ProductDB)
-def post_product(product: Product):
+async def post_product(product: Product):
     try:
-        return create_product(product)
+        return await create_product(product)
     except DocumentNotFound as e:
         raise HTTPException(status_code=404, detail=e.message)
     except DatabaseException as e:
@@ -30,17 +30,17 @@ def post_product(product: Product):
 
 
 @router.get('/{product_uuid}/', response_model=ProductDB)
-def read_product_by_uuid(product_uuid: str):
+async def read_product_by_uuid(product_uuid: str):
     try:
-        return get_product_by_uuid(uuid=product_uuid)
+        return await get_product_by_uuid(uuid=product_uuid)
     except DocumentNotFound as e:
         raise HTTPException(status_code=404, detail=e.message)
 
 
 @router.patch('/{product_uuid}/', response_model=ProductDB)
-def patch_product_by_uuid(product_uuid: str, product: ProductPartialUpdate):
+async def patch_product_by_uuid(product_uuid: str, product: ProductPartialUpdate):
     try:
-        return update_product_by_uuid(uuid=product_uuid, product=product)
+        return await update_product_by_uuid(uuid=product_uuid, product=product)
     except DocumentNotFound as e:
         raise HTTPException(status_code=404, detail=e.message)
     except DatabaseException as e:
@@ -48,9 +48,9 @@ def patch_product_by_uuid(product_uuid: str, product: ProductPartialUpdate):
 
 
 @router.delete('/{product_uuid}/', response_model=ProductDB)
-def delete_product_by_uuid(product_uuid: str):
+async def delete_product_by_uuid(product_uuid: str):
     try:
-        remove_product_by_uuid(product_uuid)
+        await remove_product_by_uuid(product_uuid)
     except DocumentNotFound as e:
         raise HTTPException(status_code=404, detail=e.message)
     return Response(status_code=204)

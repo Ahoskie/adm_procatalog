@@ -5,37 +5,37 @@ from services.utils import bulk_create, get_or_bulk_create
 from services.exceptions import DocumentAlreadyExists, DocumentNotFound
 
 
-def create_tag(tag):
-    bucket = Buckets.get_bucket(TAGS_BUCKET)
-    tags = filter_query(bucket, name=tag.name)
+async def create_tag(tag):
+    bucket = await Buckets.get_bucket(TAGS_BUCKET)
+    tags = await filter_query(bucket, name=tag.name)
     if tags:
         raise DocumentAlreadyExists(tag.name)
-    tag.attrs = bulk_create(Buckets.get_bucket(ATTRIBUTE_BUCKET), tag.attrs)
-    return upsert(bucket, tag)
+    tag.attrs = await get_or_bulk_create(await Buckets.get_bucket(ATTRIBUTE_BUCKET), tag.attrs)
+    return await upsert(bucket, tag)
 
 
-def get_all_tags(skip=0, limit=30):
-    bucket = Buckets.get_bucket(TAGS_BUCKET)
-    documents = get_all(bucket, skip=skip, limit=limit)
+async def get_all_tags(skip=0, limit=30):
+    bucket = await Buckets.get_bucket(TAGS_BUCKET)
+    documents = await get_all(bucket, skip=skip, limit=limit)
     return documents
 
 
-def get_tag_by_id(tag_id):
-    bucket = Buckets.get_bucket(TAGS_BUCKET)
-    document = get(bucket, tag_id)
+async def get_tag_by_id(tag_id):
+    bucket = await Buckets.get_bucket(TAGS_BUCKET)
+    document = await get(bucket, tag_id)
     return document
 
 
-def update_tag_by_id(tag_id, tag):
-    bucket = Buckets.get_bucket(TAGS_BUCKET)
+async def update_tag_by_id(tag_id, tag):
+    bucket = await Buckets.get_bucket(TAGS_BUCKET)
     if tag.attrs:
-        tag.attrs = get_or_bulk_create(Buckets.get_bucket(ATTRIBUTE_BUCKET), tag.attrs)
-    updated_tag = update(bucket, tag, tag_id)
+        tag.attrs = await get_or_bulk_create(await Buckets.get_bucket(ATTRIBUTE_BUCKET), tag.attrs)
+    updated_tag = await update(bucket, tag, tag_id)
     if not updated_tag:
         raise DocumentNotFound(tag_id)
     return updated_tag
 
 
-def remove_tag_by_id(tag_id):
-    bucket = Buckets.get_bucket(TAGS_BUCKET)
-    return delete(bucket, tag_id)
+async def remove_tag_by_id(tag_id):
+    bucket = await Buckets.get_bucket(TAGS_BUCKET)
+    return await delete(bucket, tag_id)

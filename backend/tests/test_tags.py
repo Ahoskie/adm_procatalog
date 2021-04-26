@@ -7,7 +7,6 @@ from models.tag import Tag
 from db.buckets import Buckets
 from core.config import TAGS_BUCKET, ATTRIBUTE_BUCKET
 from services import get, upsert
-from services.tags import create_tag, get_all_tags
 from tests import flush_db
 
 
@@ -68,7 +67,9 @@ tags = [
     },
 ]
 
-tags = [Tag(**tag) for tag in tags]
+
+def create_tag(tag):
+    client.post('/api/tags/', json=tag)
 
 
 def test_list_attributes():
@@ -78,7 +79,7 @@ def test_list_attributes():
     response = client.get('/api/tags/')
     for tag in tags:
         assert tag.name in [db_attr['name'] for db_attr in response.json()]
-    flush_db()
+    flush_db(client)
 
 
 # def test_read_attribute():
