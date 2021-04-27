@@ -15,7 +15,7 @@ PydanticModel = TypeVar('PydanticModel', bound=BaseModel)
 
 
 async def get_next_id(bucket: Bucket):
-    value = 0
+    value = 1
     try:
         next_id = await bucket.get(INT_COUNTER_NAME)
         value = next_id.value + 1

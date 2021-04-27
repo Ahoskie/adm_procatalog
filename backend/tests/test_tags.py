@@ -1,85 +1,41 @@
 import time
+import asyncio
 from fastapi.testclient import TestClient
 
 from main import app
-from db import initialize_cluster, initialize_buckets, ClusterHolder
+from tests import flush_database, initialize_database_for_test
 from models.tag import Tag
-from db.buckets import Buckets
-from core.config import TAGS_BUCKET, ATTRIBUTE_BUCKET
-from services import get, upsert
-from tests import flush_db
+from services.tags import create_tag
 
 
 client = TestClient(app)
 
-cluster = initialize_cluster()
-ClusterHolder.cluster = cluster
-initialize_buckets()
+
+def create_tag_in_db(tag):
+    loop = asyncio.get_event_loop()
+
+    async def async_create_tag():
+        result = await create_tag(tag)
+        await asyncio.sleep(0.5)
+        return result
+
+    tag = loop.run_until_complete(async_create_tag())
+    return tag
 
 
-tags = [
-    {
-        'name': 'Tag1',
-        'attrs': [
-            {
-                'name': 'att1'
-            },
-            {
-                'name': 'att2'
-            }
-        ]
-    },
-    {
-        'name': 'Tag2',
-        'attrs': [
-            {
-                'name': 'att3'
-            },
-            {
-                'name': 'att4'
-            }
-        ]
-    },
-    {
-        'name': 'Tag3',
-        'attrs': [
-            {
-                'name': 'att2'
-            },
-            {
-                'name': 'att5'
-            }
-        ]
-    },
-    {
-        'name': 'Tag4',
-        'attrs': [
-            {
-                'name': 'att3'
-            },
-            {
-                'name': 'att6'
-            },
-            {
-                'name': 'att7'
-            }
-        ]
-    },
-]
-
-
-def create_tag(tag):
-    client.post('/api/tags/', json=tag)
-
-
-def test_list_attributes():
+def setup_module(module):
+    tags = [Tag(**attr) for attr in TagsData.tags]
+    db_tags = []
     for tag in tags:
-        create_tag(tag)
-        time.sleep(1)
+        db_tags.append(create_tag_in_db(tag))
+    TagsData.tags = db_tags
+
+
+def test_list_tags():
+    tags = TagsData.tags
     response = client.get('/api/tags/')
     for tag in tags:
-        assert tag.name in [db_attr['name'] for db_attr in response.json()]
-    flush_db(client)
+        assert tag['name'] in [db_attr['name'] for db_attr in response.json()]
 
 
 # def test_read_attribute():

@@ -1,3 +1,4 @@
+import json
 from typing import List
 from fastapi import APIRouter, HTTPException, Response
 
@@ -13,5 +14,5 @@ router = APIRouter(
 @router.post('/flush-db/')
 async def flush_database():
     await flush_db()
-    return Response(content={'success': 'flushed'}, status_code='200')
+    return Response(json.dumps({'success': 'flushed'}), status_code=200)
 

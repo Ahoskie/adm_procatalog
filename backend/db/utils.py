@@ -17,4 +17,5 @@ def fulltext_search(index, limit=30, search_string=''):
 async def flush_db():
     for bucket_name in BUCKETS:
         bucket = await Buckets.get_bucket(bucket_name)
-        await bucket.flush()
+        results = bucket.flush()
+    return results

@@ -2,7 +2,6 @@ from couchbase.exceptions import BucketNotFoundException, DocumentUnretrievableE
 from couchbase.management.buckets import CreateBucketSettings, CreateBucketOptions
 
 from db import ClusterHolder
-from db.exceptions import BucketNotFound
 
 
 class Buckets:

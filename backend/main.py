@@ -10,6 +10,6 @@ app.include_router(api_router)
 
 @app.on_event('startup')
 async def startup_event():
-    cluster = initialize_cluster()
+    cluster = await initialize_cluster()
     ClusterHolder.cluster = cluster
     await initialize_buckets()

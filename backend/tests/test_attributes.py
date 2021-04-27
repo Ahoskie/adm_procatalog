@@ -1,78 +1,76 @@
-import time
+import pytest
 from fastapi.testclient import TestClient
+import asyncio
 
 from main import app
-from db import initialize_cluster, initialize_buckets, ClusterHolder
-from db.buckets import Buckets
-from core.config import ATTRIBUTE_BUCKET
-from services import get, upsert
-from tests import flush_db
+from models.attribute import Attribute
+from services.attributes import create_attribute
+from tests import initialize_database_for_test, flush_database
+
+
+@pytest.fixture(scope="session", autouse=True)
+def run_around_tests(request):
+    initialize_database_for_test()
+    flush_database()
 
 
 client = TestClient(app)
 
-attributes = [
-    {
-        'name': 'Attr1'
-    },
-    {
-        'name': 'Attr2'
-    },
-    {
-        'name': 'Attr3'
-    },
-    {
-        'name': 'Attr4'
-    },
-    {
-        'name': 'Attr5'
-    }
-]
 
+def create_attribute_in_db(attr):
+    loop = asyncio.get_event_loop()
 
-def create_attribute(attr):
-    # flush_db(client)
-    response = client.post('/api/attributes/', json=attr)
-    db_attr = response.json()
-    attr['id'] = db_attr['id']
+    async def async_create_attribute():
+        result = await create_attribute(attr)
+        await asyncio.sleep(0.5)
+        return result
+
+    attr = loop.run_until_complete(async_create_attribute())
     return attr
 
 
-def test_list_attributes():
+def setup_module(module):
+    attributes = [Attribute(**attr) for attr in AttributesData.attributes]
+    db_attrs = []
     for attr in attributes:
-        create_attribute(attr)
+        db_attrs.append(create_attribute_in_db(attr))
+    AttributesData.attributes = db_attrs
+
+
+def test_list_attributes():
+    attributes = AttributesData.attributes
     response = client.get('/api/attributes/')
     for attr in attributes:
         assert attr['name'] in [db_attr['name'] for db_attr in response.json()]
-    flush_db(client)
 
 
 def test_read_attribute():
-    attr = create_attribute(attributes[0])
+    attributes = AttributesData.attributes
+    attr = attributes[0]
     response = client.get(f'/api/attributes/{attr["id"]}/')
     assert attr['name'] == response.json()['name']
-    flush_db(client)
 
 
 def test_create_attribute():
-    attr = attributes[0]
+    attr = {
+        'name': 'Attribute-test-create'
+    }
     response = client.post('/api/attributes/', json=attr)
     assert attr['name'] == response.json()['name']
     assert 'id' in response.json()
-    flush_db(client)
 
 
 def test_create_existing_attribute():
-    attr = create_attribute(attributes[0])
+    attributes = AttributesData.attributes
+    attr = attributes[0]
     response = client.post('/api/attributes/', json=attr)
     assert 400 == response.status_code
-    flush_db(client)
 
 
 def test_delete_attribute():
-    attr = create_attribute(attributes[0])
+    attributes = AttributesData.attributes
+    attr = attributes[0]
     response_delete = client.delete(f'/api/attributes/{attr["id"]}/')
     response_get = client.get(f'/api/attributes/{attr["id"]}/')
     assert 204 == response_delete.status_code
     assert 404 == response_get.status_code
-    flush_db(client)
