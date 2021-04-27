@@ -1,3 +1,4 @@
+import time
 from pydantic import BaseModel
 
 from models.tag import Tag
@@ -15,17 +16,19 @@ class DataContainer:
     model: BaseModel
     data_creation_function = None
 
-    def fill_database(self):
-        data = [self.model(**item) for item in self.data]
+    @classmethod
+    async def fill_database(cls):
+        data = [cls.model(**item) for item in cls.data]
         db_items = []
         for item in data:
-            db_items.append(self.data_creation_function(item))
-        DataContainer.data = db_items
+            db_items.append(await cls.data_creation_function(item))
+        cls.data = db_items
+        time.sleep(3)
 
 
 class AttributesData(DataContainer):
-    model = Tag
-    data_creation_function =
+    model = Attribute
+    data_creation_function = create_attribute
     data = [
         {
             'name': 'Attr1'
@@ -46,7 +49,8 @@ class AttributesData(DataContainer):
 
 
 class TagsData(DataContainer):
-
+    model = Tag
+    data_creation_function = create_tag
     data = [
         {
             'name': 'Tag1',

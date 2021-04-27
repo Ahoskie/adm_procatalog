@@ -3,7 +3,7 @@ import asyncio
 from fastapi.testclient import TestClient
 
 from main import app
-from tests import flush_database, initialize_database_for_test
+from tests.data import TagsData
 from models.tag import Tag
 from services.tags import create_tag
 
@@ -23,16 +23,8 @@ def create_tag_in_db(tag):
     return tag
 
 
-def setup_module(module):
-    tags = [Tag(**attr) for attr in TagsData.tags]
-    db_tags = []
-    for tag in tags:
-        db_tags.append(create_tag_in_db(tag))
-    TagsData.tags = db_tags
-
-
 def test_list_tags():
-    tags = TagsData.tags
+    tags = TagsData.data
     response = client.get('/api/tags/')
     for tag in tags:
         assert tag['name'] in [db_attr['name'] for db_attr in response.json()]
