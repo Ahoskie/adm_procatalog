@@ -1,64 +1,52 @@
 import time
-import asyncio
+import unittest
 from fastapi.testclient import TestClient
 
 from main import app
+from tests.utils import initialize_database_for_test, remove_test_consequences
 from tests.data import TagsData
-from models.tag import Tag
-from services.tags import create_tag
 
 
 client = TestClient(app)
 
 
-def create_tag_in_db(tag):
-    loop = asyncio.get_event_loop()
+class TestTags(unittest.TestCase):
+    def test_list_tags(self):
+        tags = TagsData.data
+        response = client.get('/api/tags/')
 
-    async def async_create_tag():
-        result = await create_tag(tag)
-        await asyncio.sleep(0.5)
-        return result
+        for tag in tags:
+            self.assertIn(tag['name'], [db_attr['name'] for db_attr in response.json()])
 
-    tag = loop.run_until_complete(async_create_tag())
-    return tag
+    def test_read_tag(self):
+        tags = TagsData.data
+        tag = tags[1]
+        response = client.get(f'/api/tags/{tag["id"]}/')
+        self.assertEqual(tag['name'], response.json()['name'])
 
+    def test_create_tag(self):
+        tag = {
+            'name': 'Tag-test-create',
+            'attrs': [
+                {
+                    'name': 'att1',
+                },
+                {
+                    'name': 'new-att'
+                }
+            ]
+        }
+        response = client.post('/api/tags/', json=tag)
+        self.assertEqual(tag['name'], response.json()['name'])
+        attrs = [name for name in tag['attrs']]
+        for attr in attrs:
+            self.assertIn(attr['name'], [attr_db['name'] for attr_db in response.json()['attrs']])
+        self.assertIn('id', response.json())
 
-def test_list_tags():
-    tags = TagsData.data
-    response = client.get('/api/tags/')
-    for tag in tags:
-        assert tag['name'] in [db_attr['name'] for db_attr in response.json()]
-
-
-# def test_read_attribute():
-#     attr = create_attribute(attributes[0])
-#     time.sleep(1)
-#     response = client.get(f'/api/attributes/{attr["id"]}/')
-#     assert attr['name'] == response.json()['name']
-#     flush_db()
-#
-#
-# def test_create_attribute():
-#     attr = attributes[0]
-#     response = client.post('/api/attributes/', json=attr)
-#     assert attr['name'] == response.json()['name']
-#     assert 'id' in response.json()
-#     flush_db()
-#
-#
-# def test_create_existing_attribute():
-#     attr = attributes[0]
-#     client.post('/api/attributes/', json=attr)
-#     response = client.post('/api/attributes/', json=attr)
-#     assert 400 == response.status_code
-#     flush_db()
-#
-#
-# def test_delete_attribute():
-#     attr = create_attribute(attributes[0])
-#     time.sleep(1)
-#     response_delete = client.delete(f'/api/attributes/{attr["id"]}/')
-#     response_get = client.get(f'/api/attributes/{attr["id"]}/')
-#     assert 204 == response_delete.status_code
-#     assert 404 == response_get.status_code
-#     flush_db()
+    def test_delete_attribute(self):
+        tags = TagsData.data
+        tag = tags[1]
+        response_delete = client.delete(f'/api/attributes/{tag["id"]}/')
+        response_get = client.get(f'/api/attributes/{tag["id"]}/')
+        self.assertEqual(204, response_delete.status_code)
+        self.assertEqual(404, response_get.status_code)

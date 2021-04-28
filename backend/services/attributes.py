@@ -10,7 +10,7 @@ async def get_attribute_by_id(attr_id):
     return await get(bucket, attr_id)
 
 
-async def get_all_attributes(skip=0, limit=30):
+async def get_all_attributes(skip=0, limit=100):
     bucket = await Buckets.get_bucket(ATTRIBUTE_BUCKET)
     return await get_all(bucket, skip=skip, limit=limit)
 

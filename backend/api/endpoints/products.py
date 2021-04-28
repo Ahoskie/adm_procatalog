@@ -15,7 +15,7 @@ router = APIRouter(
 
 
 @router.get('/', response_model=List[ProductDB])
-async def list_products(skip=0, limit=30):
+async def list_products(skip=0, limit=100):
     return await get_all_products(skip, limit)
 
 

@@ -13,7 +13,7 @@ router = APIRouter(
 
 
 @router.get('/', response_model=List[BrandDB])
-async def list_brands(skip: int = 0, limit: int = 30):
+async def list_brands(skip: int = 0, limit: int = 100):
     return await get_all_brands(skip, limit)
 
 

@@ -4,7 +4,7 @@ from .exceptions import DocumentAlreadyExists
 from . import upsert, get_all, filter_query, update, get, delete
 
 
-async def get_all_brands(skip=0, limit=30):
+async def get_all_brands(skip=0, limit=100):
     bucket = await Buckets.get_bucket(BRANDS_BUCKET)
     return await get_all(bucket, skip=skip, limit=limit)
 

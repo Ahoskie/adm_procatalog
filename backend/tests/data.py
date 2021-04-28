@@ -1,3 +1,4 @@
+import asyncio
 import time
 from pydantic import BaseModel
 
@@ -21,7 +22,8 @@ class DataContainer:
         data = [cls.model(**item) for item in cls.data]
         db_items = []
         for item in data:
-            db_items.append(await cls.data_creation_function(item))
+            result = await cls.data_creation_function(item)
+            db_items.append(result)
         cls.data = db_items
         time.sleep(3)
 
@@ -96,6 +98,151 @@ class TagsData(DataContainer):
                 },
                 {
                     'name': 'att7'
+                }
+            ]
+        },
+    ]
+
+
+class BrandsData(DataContainer):
+    model = Brand
+    data_creation_function = create_brand
+    data = [
+        {
+            'name': 'Brand1'
+        },
+        {
+            'name': 'Brand2'
+        },
+        {
+            'name': 'Brand3'
+        },
+        {
+            'name': 'Brand4'
+        },
+        {
+            'name': 'Brand5'
+        }
+    ]
+
+
+class ProductsData(DataContainer):
+    model = Product
+    data_creation_function = create_product
+    data = [
+        {
+            'name': 'Product1',
+            'brand': {
+                'name': 'Brand1'
+            },
+            'tags': [
+                {
+                    'name': 'Tag1'
+                },
+                {
+                    'name': 'Tag2'
+                },
+                {
+                    'name': 'Tag3'
+                }
+            ],
+            'variants': [
+                {
+                    'name': 'var1',
+                    'attributes_values': [
+                        {
+                            'name': 'att3',
+                            'value': 'Val1'
+                        },
+                        {
+                            'name': 'att4',
+                            'value': 'Val2'
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            'name': 'Product2',
+            'brand': {
+                'name': 'Brand1'
+            },
+            'tags': [
+                {
+                    'name': 'Tag1'
+                },
+                {
+                    'name': 'Tag2'
+                }
+            ],
+            'variants': [
+                {
+                    'name': 'var1',
+                    'attributes_values': [
+                        {
+                            'name': 'att1',
+                            'value': 'Val1'
+                        },
+                        {
+                            'name': 'att2',
+                            'value': 'Val2'
+                        }
+                    ]
+                },
+                {
+                    'name': 'var2',
+                    'attributes_values': [
+                        {
+                            'name': 'att2',
+                            'value': 'Val2'
+                        },
+                        {
+                            'name': 'att4',
+                            'value': 'Val3'
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            'name': 'Product3',
+            'brand': {
+                'name': 'Brand2'
+            },
+            'tags': [
+                {
+                    'name': 'Tag2'
+                },
+                {
+                    'name': 'Tag3'
+                }
+            ],
+            'variants': [
+                {
+                    'name': 'var1',
+                    'attributes_values': [
+                        {
+                            'name': 'att3',
+                            'value': 'Val1'
+                        },
+                        {
+                            'name': 'att5',
+                            'value': 'Val2'
+                        }
+                    ]
+                },
+                {
+                    'name': 'var2',
+                    'attributes_values': [
+                        {
+                            'name': 'att2',
+                            'value': 'Val2'
+                        },
+                        {
+                            'name': 'att5',
+                            'value': 'Val3'
+                        }
+                    ]
                 }
             ]
         },

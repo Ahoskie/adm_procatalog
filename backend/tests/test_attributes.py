@@ -1,61 +1,59 @@
-import pytest
+import time
+import unittest
 from fastapi.testclient import TestClient
-import asyncio
-from httpx import AsyncClient
 
 from main import app
-from tests import initialize_database_for_test, teardown
+from tests.utils import initialize_database_for_test, remove_test_consequences
 from tests.data import AttributesData
 
 
-@pytest.fixture(scope="session", autouse=True)
-def run_around_tests(request):
-    initialize_database_for_test()
-    yield
-    teardown()
+client = TestClient(app=app)
 
 
-client = TestClient(app)
+class TestAttributes(unittest.TestCase):
+    def test_list_attributes(self):
+        response = client.get('/api/attributes/')
+        self.assertEqual(response.status_code, 200)
 
+    def test_read_attribute(self):
+        attributes = AttributesData.data
+        attr = attributes[1]
+        response = client.get(f'/api/attributes/{attr["id"]}/')
+        self.assertEqual(attr['name'], response.json()['name'])
 
-@pytest.mark.asyncio
-async def test_list_attributes():
-    attributes = AttributesData.data
-    async with AsyncClient(app=app, base_url='http://192.168.20.84:8000') as a_client:
-        response = await a_client.get('/api/attributes/')
-    print(response)
-    print(attributes)
-    for attr in attributes:
-        assert attr['name'] in [db_attr['name'] for db_attr in response.json()]
+    def test_create_attribute(self):
+        attr = {
+            'name': 'Attribute-test-create'
+        }
+        response = client.post('/api/attributes/', json=attr)
+        self.assertEqual(attr['name'], response.json()['name'])
+        self.assertIn('id', response.json())
 
+    def test_create_existing_attribute(self):
+        attributes = AttributesData.data
+        attr = attributes[0]
+        response = client.post('/api/attributes/', json=attr)
+        self.assertEqual(400, response.status_code)
 
-def test_read_attribute():
-    attributes = AttributesData.data
-    attr = attributes[0]
-    response = client.get(f'/api/attributes/{attr["id"]}/')
-    assert attr['name'] == response.json()['name']
+    def test_update_attribute(self):
+        attr = {
+            'name': 'Attribute-for-update',
+        }
+        response_post = client.post('/api/attributes/', json=attr)
+        attr_db = response_post.json()
 
+        attr_upd = {
+            'name': 'Attribute-for-update_upd',
+        }
+        response_patch = client.patch(f'/api/attributes/{attr_db["id"]}/', json=attr_upd)
+        self.assertEqual(200, response_patch.status_code)
+        self.assertNotEqual(attr_db['name'], response_patch.json()['name'])
 
-def test_create_attribute():
-    attr = {
-        'name': 'Attribute-test-create'
-    }
-    response = client.post('/api/attributes/', json=attr)
-    assert attr['name'] == response.json()['name']
-    assert 'id' in response.json()
+    def test_delete_attribute(self):
+        attributes = AttributesData.data
+        attr = attributes[0]
+        response_delete = client.delete(f'/api/attributes/{attr["id"]}/')
+        response_get = client.get(f'/api/attributes/{attr["id"]}/')
+        self.assertEqual(204, response_delete.status_code)
+        self.assertEqual(404, response_get.status_code)
 
-
-def test_create_existing_attribute():
-    attributes = AttributesData.data
-    attr = attributes[0]
-    response = client.post('/api/attributes/', json=attr)
-    assert 400 == response.status_code
-
-
-def test_delete_attribute():
-    attributes = AttributesData.data
-    attr = attributes[0]
-    response_delete = client.delete(f'/api/attributes/{attr["id"]}/')
-    response_get = client.get(f'/api/attributes/{attr["id"]}/')
-    assert 204 == response_delete.status_code
-    assert 404 == response_get.status_code

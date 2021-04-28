@@ -68,7 +68,7 @@ async def create_product(product):
     return result_product
 
 
-async def get_all_products(skip=0, limit=30):
+async def get_all_products(skip=0, limit=100):
     bucket = await Buckets.get_bucket(PRODUCTS_BUCKET)
     return await get_all(bucket, skip=skip, limit=limit)
 

@@ -1,20 +1,22 @@
 from db.buckets import Buckets
 from core.config import TAGS_BUCKET, ATTRIBUTE_BUCKET
 from services import upsert, get, get_all, update, delete, filter_query
-from services.utils import bulk_create, get_or_bulk_create
+from services.utils import bulk_create, get_or_bulk_create, get_document_if_exists
 from services.exceptions import DocumentAlreadyExists, DocumentNotFound
 
 
 async def create_tag(tag):
     bucket = await Buckets.get_bucket(TAGS_BUCKET)
-    tags = await filter_query(bucket, name=tag.name)
+    tag_for_search = tag.copy()
+    delattr(tag_for_search, 'attrs')
+    tags = await get_document_if_exists(bucket, tag_for_search)
     if tags:
         raise DocumentAlreadyExists(tag.name)
     tag.attrs = await get_or_bulk_create(await Buckets.get_bucket(ATTRIBUTE_BUCKET), tag.attrs)
     return await upsert(bucket, tag)
 
 
-async def get_all_tags(skip=0, limit=30):
+async def get_all_tags(skip=0, limit=100):
     bucket = await Buckets.get_bucket(TAGS_BUCKET)
     documents = await get_all(bucket, skip=skip, limit=limit)
     return documents

@@ -13,7 +13,7 @@ router = APIRouter(
 
 
 @router.get('/', response_model=List[TagDB])
-async def list_tags(skip: int = 0, limit: int = 30):
+async def list_tags(skip: int = 0, limit: int = 100):
     return await get_all_tags(skip, limit)
 
 

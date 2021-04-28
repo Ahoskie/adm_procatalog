@@ -14,7 +14,7 @@ router = APIRouter(
 
 
 @router.get('/', response_model=List[AttributeDB])
-async def list_attrs(skip: int = 0, limit: int = 30):
+async def list_attrs(skip: int = 0, limit: int = 100):
     return await get_all_attributes(skip, limit)
 
 
