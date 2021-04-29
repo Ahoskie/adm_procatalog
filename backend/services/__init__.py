@@ -7,7 +7,6 @@ from fastapi.encoders import jsonable_encoder
 
 from core.config import INT_COUNTER_NAME
 from services.exceptions import DocumentNotFound
-from db.utils import fulltext_search
 from db import ClusterHolder
 
 
@@ -101,7 +100,16 @@ async def custom_query(skip: int = 0, limit: int = 30, query_string=''):
     return [row async for row in query_result]
 
 
-async def fulltext_in_bucket(bucket: Bucket, limit: int = 30, search_string=''):
-    index = f'{bucket.name}_index'
-    search_result = await fulltext_search(index=index, limit=limit, search_string=search_string)
-    return search_result
+async def search_in_bucket(bucket, search_string='', fields=[], skip=0, limit=100):
+    cluster = ClusterHolder.cluster
+    # creating a search string with every word wrapped in %"word"%
+    search_string = search_string.strip()
+    search_strings = [f'"%{string}%"' for string in search_string.split(' ') if len(string) >= 3]
+
+    satisfactions = ' OR '.join([f'array_element LIKE LOWER({string})' for string in search_strings])
+    fields_conditions = [f'ANY array_element IN SUFFIXES(LOWER(b.{field})) SATISFIES {satisfactions}'
+                         for field in fields]
+
+    query_string = f'SELECT b.*, META(b).id AS id FROM {bucket.name} AS b WHERE {" END OR ".join(fields_conditions)}'
+    query_results = cluster.query(query_string + f'END LIMIT {limit} OFFSET {skip}')
+    return [row async for row in query_results]

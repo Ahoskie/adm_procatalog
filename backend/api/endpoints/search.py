@@ -1,7 +1,9 @@
+from typing import List
 from fastapi import APIRouter
 
-from models.product import Product
-from services.products import fulltext_find_product
+from models import Search
+from models.product import ProductDB
+from services.products import find_product
 
 
 router = APIRouter(
@@ -10,6 +12,6 @@ router = APIRouter(
 )
 
 
-@router.post('/')
-async def post_product(product: Product, limit=30):
-    return await fulltext_find_product(limit=limit, search_string=product.name)
+@router.post('/products/', response_model=List[ProductDB])
+async def product_search(search_product: Search, skip=0, limit=100):
+    return await find_product(search_string=search_product.search_string, skip=skip, limit=limit)

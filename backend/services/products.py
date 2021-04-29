@@ -5,7 +5,7 @@ from couchbase.exceptions import DocumentNotFoundException
 from db.buckets import Buckets
 from db.exceptions import UniqueConstraintViolation
 from core.config import PRODUCTS_BUCKET, BRANDS_BUCKET, TAGS_BUCKET
-from services import upsert, get, get_all, delete, custom_query, fulltext_in_bucket, update, filter_query
+from services import upsert, get, get_all, delete, custom_query, update, search_in_bucket
 from services.utils import get_or_create, get_document_if_exists
 from services.exceptions import DocumentNotFound, InvalidVariantAttribute
 from models.attribute import AttributeWithValueDB
@@ -109,6 +109,10 @@ async def remove_product_by_uuid(uuid):
         raise DocumentNotFound(uuid)
 
 
-async def fulltext_find_product(limit=30, search_string=''):
+async def find_product(search_string='', skip=0, limit=100):
     bucket = await Buckets.get_bucket(PRODUCTS_BUCKET)
-    return await fulltext_in_bucket(bucket, limit=limit, search_string=search_string)
+    fields = [
+        'name',
+        'brand.name'
+    ]
+    return await search_in_bucket(bucket, search_string=search_string, fields=fields, skip=skip, limit=limit)
