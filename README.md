@@ -33,7 +33,7 @@ N1QL query like on the image below.
 
 The text of the command must look this way:
 
-```sql
+```couchbasequery
 CREATE PRIMARY INDEX `bucket_index` ON `bucket` USING GSI
 ```
 The word _bucket_ needs to be replaced with the actual bucket name. This operation must be

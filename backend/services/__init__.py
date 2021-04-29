@@ -101,7 +101,7 @@ async def custom_query(skip: int = 0, limit: int = 30, query_string=''):
     return [row async for row in query_result]
 
 
-def fulltext_in_bucket(bucket: Bucket, limit: int = 30, search_string=''):
+async def fulltext_in_bucket(bucket: Bucket, limit: int = 30, search_string=''):
     index = f'{bucket.name}_index'
-    search_result = fulltext_search(index=index, limit=limit, search_string=search_string)
+    search_result = await fulltext_search(index=index, limit=limit, search_string=search_string)
     return search_result

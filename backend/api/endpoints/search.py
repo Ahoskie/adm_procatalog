@@ -11,5 +11,5 @@ router = APIRouter(
 
 
 @router.post('/')
-def post_product(product: Product, limit=30):
-    return fulltext_find_product(limit=limit, search_string=product.name)
+async def post_product(product: Product, limit=30):
+    return await fulltext_find_product(limit=limit, search_string=product.name)

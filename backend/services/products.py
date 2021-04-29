@@ -109,6 +109,6 @@ async def remove_product_by_uuid(uuid):
         raise DocumentNotFound(uuid)
 
 
-def fulltext_find_product(limit=30, search_string=''):
-    bucket = Buckets.get_bucket(PRODUCTS_BUCKET)
-    return fulltext_in_bucket(bucket, limit=limit, search_string=search_string)
+async def fulltext_find_product(limit=30, search_string=''):
+    bucket = await Buckets.get_bucket(PRODUCTS_BUCKET)
+    return await fulltext_in_bucket(bucket, limit=limit, search_string=search_string)
