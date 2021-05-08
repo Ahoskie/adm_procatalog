@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes import api_router
 from db import initialize_cluster, initialize_buckets, ClusterHolder
@@ -6,6 +7,11 @@ from db import initialize_cluster, initialize_buckets, ClusterHolder
 app = FastAPI()
 
 app.include_router(api_router)
+app.add_middleware(
+    CORSMiddleware,
+    allow_methods=['*'],
+    allow_headers=['*']
+)
 
 
 @app.on_event('startup')
