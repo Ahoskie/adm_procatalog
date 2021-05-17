@@ -102,14 +102,16 @@ async def custom_query(skip: int = 0, limit: int = 30, query_string=''):
 
 async def search_in_bucket(bucket, search_string='', fields=[], skip=0, limit=100):
     cluster = ClusterHolder.cluster
+    if len(search_string) < 3:
+        return []
     # creating a search string with every word wrapped in %"word"%
     search_string = search_string.strip()
-    search_strings = [f'"%{string}%"' for string in search_string.split(' ') if len(string) >= 3]
+    search_strings = [f'"%{string}%"' for string in search_string.split(' ')]
 
-    satisfactions = ' OR '.join([f'array_element LIKE LOWER({string})' for string in search_strings])
-    fields_conditions = [f'ANY array_element IN SUFFIXES(LOWER(b.{field})) SATISFIES {satisfactions}'
-                         for field in fields]
+    satisfactions = ' AND '.join([f'array_element LIKE LOWER({string})' for string in search_strings])
+    concatenated_fields = " || \" \" || ".join(["b." + field for field in fields])
+    fields_condition = f'ANY array_element IN SUFFIXES(LOWER({concatenated_fields})) SATISFIES {satisfactions}'
 
-    query_string = f'SELECT b.*, META(b).id AS id FROM {bucket.name} AS b WHERE {" END OR ".join(fields_conditions)}'
-    query_results = cluster.query(query_string + f'END LIMIT {limit} OFFSET {skip}')
+    query_string = f'SELECT b.*, META(b).id AS id FROM {bucket.name} AS b WHERE {fields_condition} END '
+    query_results = cluster.query(query_string + f'LIMIT {limit} OFFSET {skip}')
     return [row async for row in query_results]
