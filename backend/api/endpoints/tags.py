@@ -1,8 +1,7 @@
 from typing import List
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, Response
 
 from models.tag import Tag, TagDB, TagPartialUpdate
-from services.exceptions import DocumentNotFound, DocumentAlreadyExists
 from services.tags import create_tag, get_all_tags, get_tag_by_id, update_tag_by_id, remove_tag_by_id
 
 
@@ -19,36 +18,22 @@ async def list_tags(skip: int = 0, limit: int = 100):
 
 @router.get('/{tag_id}/', response_model=TagDB)
 async def read_tag_by_id(tag_id: str):
-    try:
-        return await get_tag_by_id(tag_id=tag_id)
-    except DocumentNotFound as e:
-        raise HTTPException(status_code=404, detail=e.message)
+    return await get_tag_by_id(tag_id=tag_id)
 
 
 @router.post('/', response_model=TagDB)
 async def post_tag(tag: Tag):
-    try:
-        tag = await create_tag(tag)
-    except DocumentAlreadyExists as e:
-        raise HTTPException(status_code=400, detail=e.message)
+    tag = await create_tag(tag)
     return tag
 
 
 @router.patch('/{tag_id}/', response_model=TagDB)
 async def patch_tag(tag_id: str, tag: TagPartialUpdate):
-    try:
-        tag = await update_tag_by_id(tag_id, tag)
-    except DocumentNotFound as e:
-        raise HTTPException(status_code=404, detail=e.message)
-    except DocumentAlreadyExists as e:
-        raise HTTPException(status_code=400, detail=e.message)
+    tag = await update_tag_by_id(tag_id, tag)
     return tag
 
 
 @router.delete('/{tag_id}/')
 async def delete_tag(tag_id: str):
-    try:
-        tag = await remove_tag_by_id(tag_id)
-    except DocumentNotFound as e:
-        raise HTTPException(status_code=404, detail=e.message)
+    await remove_tag_by_id(tag_id)
     return Response(status_code=204)
