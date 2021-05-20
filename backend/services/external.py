@@ -23,7 +23,7 @@ def get_external_request(uri, **kwargs):
         if res.status_code // 100 in (4, 5):
             logger.error(msg=f'Request finished with status {res.status_code}. Params = {kwargs}, url = {uri}')
             content = {}
-    return content
+    return content, res.status_code
 
 
 def post_external_request(uri, **kwargs):
@@ -42,5 +42,4 @@ def post_external_request(uri, **kwargs):
     else:
         if res.status_code // 100 in (4, 5):
             logger.error(msg=f'Request finished with status {res.status_code}. Payload = {kwargs}, url = {uri}')
-            content = {}
-    return content
+    return content, res.status_code

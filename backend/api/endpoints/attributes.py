@@ -1,9 +1,10 @@
 from typing import List
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Response, Request, HTTPException
 
 from models.attribute import Attribute, AttributeDB, AttributePartialUpdate
 from services.attributes import (create_attribute, get_all_attributes, get_attribute_by_id, update_attribute,
                                  remove_attribute)
+from services.roles import Permissions, user_has_permissions
 
 
 router = APIRouter(
@@ -23,18 +24,24 @@ async def read_attr_by_id(attr_id: str):
 
 
 @router.post('/', response_model=AttributeDB)
-async def post_attr(attr: Attribute):
+async def post_attr(request: Request, attr: Attribute):
+    user = request.scope['user']
+    user_has_permissions(user, Permissions.WRITE)
     attr = await create_attribute(attr)
     return attr
 
 
 @router.patch('/{attr_id}/', response_model=AttributeDB)
-async def patch_attr(attr_id: str, attr: AttributePartialUpdate):
+async def patch_attr(request: Request, attr_id: str, attr: AttributePartialUpdate):
+    user = request.scope['user']
+    user_has_permissions(user, Permissions.WRITE)
     attr = await update_attribute(attr_id, attr)
     return attr
 
 
 @router.delete('/{attr_id}/')
-async def delete_attr(attr_id: str):
+async def delete_attr(request: Request, attr_id: str):
+    user = request.scope['user']
+    user_has_permissions(user, Permissions.WRITE)
     await remove_attribute(attr_id)
     return Response(status_code=204)

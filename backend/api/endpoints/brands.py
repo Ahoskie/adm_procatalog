@@ -1,8 +1,9 @@
 from typing import List
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Response, Request, HTTPException
 
 from models.brand import Brand, BrandDB, BrandPartialUpdate
 from services.brands import get_brand_by_id, get_all_brands, create_brand, update_brand, remove_brand
+from services.roles import Permissions, user_has_permissions
 
 
 router = APIRouter(
@@ -22,18 +23,24 @@ async def read_brand_by_id(brand_id: str):
 
 
 @router.post('/', response_model=BrandDB)
-async def post_brand(brand: Brand):
+async def post_brand(request: Request, brand: Brand):
+    user = request.scope['user']
+    user_has_permissions(user, Permissions.WRITE)
     brand = await create_brand(brand)
     return brand
 
 
 @router.patch('/{brand_id}/', response_model=BrandDB)
-async def patch_brand(brand_id: str, brand: BrandPartialUpdate):
+async def patch_brand(request: Request, brand_id: str, brand: BrandPartialUpdate):
+    user = request.scope['user']
+    user_has_permissions(user, Permissions.WRITE)
     brand = await update_brand(brand_id, brand)
     return brand
 
 
 @router.delete('/{brand_id}/')
-async def delete_brand(brand_id: str):
+async def delete_brand(request: Request, brand_id: str):
+    user = request.scope['user']
+    user_has_permissions(user, Permissions.WRITE)
     await remove_brand(brand_id)
     return Response(status_code=204)
