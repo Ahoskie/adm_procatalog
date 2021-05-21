@@ -35,7 +35,7 @@ def post_external_request(uri, **kwargs):
             data=json.dumps(kwargs),
             timeout=5
         )
-        content = json.loads(res.content)
+        content = json.loads(res.content if res.content else '{}')
     except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout) as e:
         logger.error(msg=e)
         content = {}

@@ -9,15 +9,15 @@ from core.config import AUTH_IP
 
 class AppendUserToRequest(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        access_token = request.cookies.get('token')
+        access_token = request.headers.get('authorization')
         decoded_user = None
         if access_token:
-            response_data, status = post_external_request(AUTH_IP + '/api/verify-token/', {'token': access_token})
+            access_token = access_token[7:]
+            response_data, status = post_external_request(AUTH_IP + '/api/users/verify-token/', token=access_token)
             if status != 200:
-                return JSONResponse(status_code=status, content=response_data)
+                return JSONResponse(status_code=401, content={'detail': 'Unable to authenticate user'})
 
             try:
-                access_token = access_token[7:]
                 decoded_user = jwt.decode(access_token, algorithm='HS256', options={'verify_signature': False})
             except jwt.exceptions.InvalidTokenError or jwt.exceptions.DecodeError:
                 return JSONResponse(status_code=401, content={'detail': 'Bad token format'})
