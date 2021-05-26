@@ -18,11 +18,9 @@ def get_external_request(uri, **kwargs):
         content = json.loads(res.content)
     except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout) as e:
         logger.error(msg=e)
-        content = {}
-    else:
-        if res.status_code // 100 in (4, 5):
-            logger.error(msg=f'Request finished with status {res.status_code}. Params = {kwargs}, url = {uri}')
-            content = {}
+        return {}, None
+    if res.status_code // 100 in (4, 5):
+        logger.error(msg=f'Request finished with status {res.status_code}. Params = {kwargs}, url = {uri}')
     return content, res.status_code
 
 
@@ -38,8 +36,7 @@ def post_external_request(uri, **kwargs):
         content = json.loads(res.content if res.content else '{}')
     except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout) as e:
         logger.error(msg=e)
-        content = {}
-    else:
-        if res.status_code // 100 in (4, 5):
-            logger.error(msg=f'Request finished with status {res.status_code}. Payload = {kwargs}, url = {uri}')
+        return {}, None
+    if res.status_code // 100 in (4, 5):
+        logger.error(msg=f'Request finished with status {res.status_code}. Payload = {kwargs}, url = {uri}')
     return content, res.status_code

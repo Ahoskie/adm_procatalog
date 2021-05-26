@@ -20,6 +20,6 @@ def role_has_permissions(role_id: int, permissions: list):
 
 
 def user_has_permissions(user: dict, permissions: list):
-    if not user or not role_has_permissions(user['role_id'], permissions):
+    if not user or not role_has_permissions(user['role']['id'], permissions):
         raise HTTPException(status_code=403, detail='You have no permissions to perform the operation')
     return True
