@@ -14,5 +14,6 @@ SAMPLE_BUCKETS=beer-sample,travel-sample
 
 # Fastapi
 # -------------------------------------------------
+AUTH_IP=http://192.168.100.5:8010
 COUCHBASE_IP=couchbase://192.168.20.84:8091
 LOCAL_IP=http://192.168.20.84

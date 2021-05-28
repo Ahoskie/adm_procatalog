@@ -19,6 +19,7 @@ class VariantDB(Variant):
 
 class Product(BaseModel):
     name: str
+    image_link: str
     brand: Brand
     tags: List[TagNoAttributes]
     variants: List[Variant]
@@ -26,6 +27,7 @@ class Product(BaseModel):
 
 class ProductPartialUpdate(BaseModel):
     name: Optional[str]
+    image_link: Optional[str]
     brand: Optional[Brand]
     tags: Optional[List[TagNoAttributes]]
     variants: Optional[List[Variant]]

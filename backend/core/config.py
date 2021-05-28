@@ -19,6 +19,7 @@ COUCHBASE_DEFAULT_DATASET = 'test'
 
 COUCHBASE_IP = os.getenv('COUCHBASE_IP')
 LOCAL_IP = os.getenv('LOCAL_IP')
+AUTH_IP = os.getenv('AUTH_IP')
 
 
 # DB Data
