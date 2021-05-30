@@ -1,3 +1,5 @@
+import bs4
+import requests
 from uuid import uuid4
 
 from couchbase.exceptions import DocumentNotFoundException
@@ -8,6 +10,7 @@ from core.config import PRODUCTS_BUCKET, BRANDS_BUCKET, TAGS_BUCKET
 from services import upsert, get, get_all, delete, custom_query, update, search_in_bucket
 from services.utils import get_or_create, get_document_if_exists
 from services.exceptions import DocumentNotFound, InvalidVariantAttribute
+from services.external import get_external_request
 from models.attribute import AttributeWithValueDB
 from models.product import VariantDB
 from models.tag import TagDBNoAttributes
@@ -116,3 +119,14 @@ async def find_product(search_string='', skip=0, limit=100):
         'brand.name'
     ]
     return await search_in_bucket(bucket, search_string=search_string, fields=fields, skip=skip, limit=limit)
+
+
+async def find_product_images(search_string=''):
+    url = f'https://www.google.com/search'
+    response = requests.get(url, params={'q': search_string, 'tbm': 'isch'}, timeout=5)
+    images = []
+    if response.status_code == 200:
+        soup = bs4.BeautifulSoup(response.content, 'html.parser')
+        images = [img['src'] for img in soup.find_all('img') if img['src'][:5] == 'https']
+    return images[:10]
+
