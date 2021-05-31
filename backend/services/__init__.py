@@ -113,8 +113,9 @@ async def search_in_bucket(bucket, search_string='', fields=[], filters=List[Bas
     concatenated_fields = " || \" \" || ".join(["b." + field for field in fields])
     fields_condition = f'ANY array_element IN SUFFIXES(LOWER({concatenated_fields})) SATISFIES {satisfactions}'
 
-    query_string = f'SELECT b.*, META(b).id AS id FROM {bucket.name} AS b WHERE {fields_condition} END AND '
+    query_string = f'SELECT b.*, META(b).id AS id FROM {bucket.name} AS b WHERE {fields_condition} END '
     filters_conditions = ' AND '.join([filter_obj.get_query_condition() for filter_obj in filters])
-    query_string += filters_conditions
+    if filters_conditions:
+        query_string += 'AND ' + filters_conditions
     query_results = cluster.query(query_string + f'LIMIT {limit} OFFSET {skip}')
     return [row async for row in query_results]
