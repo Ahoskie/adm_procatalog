@@ -2,6 +2,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 from uuid import UUID
 
+from models import Search
 from models.brand import Brand, BrandDB
 from models.tag import TagDBNoAttributes, TagNoAttributes
 from models.attribute import AttributeWithValue, AttributeWithValueDB
@@ -38,3 +39,8 @@ class ProductDB(Product):
     brand: BrandDB
     tags: List[TagDBNoAttributes]
     variants: List[VariantDB]
+
+
+class ProductSearch(Search):
+    tags: Optional[List[str]]
+    brand: Optional[str]

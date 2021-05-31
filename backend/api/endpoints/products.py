@@ -1,9 +1,9 @@
 from typing import List
 from fastapi import APIRouter, Response, Request, HTTPException
 
-from models.product import Product, ProductDB, ProductPartialUpdate
+from models.product import Product, ProductDB, ProductPartialUpdate, ProductSearch
 from services.products import (create_product, get_all_products, get_product_by_uuid, update_product_by_uuid,
-                               remove_product_by_uuid)
+                               remove_product_by_uuid, find_product)
 from services.roles import Permissions, user_has_permissions
 
 
@@ -43,3 +43,9 @@ async def delete_product_by_uuid(request: Request, product_uuid: str):
     user_has_permissions(user, Permissions.WRITE)
     await remove_product_by_uuid(product_uuid)
     return Response(status_code=204)
+
+
+@router.post('/search/', response_model=List[ProductDB])
+async def product_search(search_product: ProductSearch, skip=0, limit=100):
+    return await find_product(search_string=search_product.search_string, tags=search_product.tags,
+                              brand=search_product.brand, skip=skip, limit=limit)

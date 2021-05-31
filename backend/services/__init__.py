@@ -1,4 +1,4 @@
-from typing import TypeVar
+from typing import TypeVar, List
 
 from pydantic import BaseModel
 from acouchbase.cluster import Bucket
@@ -8,6 +8,7 @@ from fastapi.encoders import jsonable_encoder
 from core.config import INT_COUNTER_NAME
 from services.exceptions import DocumentNotFound
 from db import ClusterHolder
+from db.filters import BaseFilter
 
 
 PydanticModel = TypeVar('PydanticModel', bound=BaseModel)
@@ -100,7 +101,7 @@ async def custom_query(skip: int = 0, limit: int = 30, query_string=''):
     return [row async for row in query_result]
 
 
-async def search_in_bucket(bucket, search_string='', fields=[], skip=0, limit=100):
+async def search_in_bucket(bucket, search_string='', fields=[], filters=List[BaseFilter], skip=0, limit=100):
     cluster = ClusterHolder.cluster
     if len(search_string) < 3:
         return []
@@ -112,6 +113,8 @@ async def search_in_bucket(bucket, search_string='', fields=[], skip=0, limit=10
     concatenated_fields = " || \" \" || ".join(["b." + field for field in fields])
     fields_condition = f'ANY array_element IN SUFFIXES(LOWER({concatenated_fields})) SATISFIES {satisfactions}'
 
-    query_string = f'SELECT b.*, META(b).id AS id FROM {bucket.name} AS b WHERE {fields_condition} END '
+    query_string = f'SELECT b.*, META(b).id AS id FROM {bucket.name} AS b WHERE {fields_condition} END AND '
+    filters_conditions = ' AND '.join([filter_obj.get_query_condition() for filter_obj in filters])
+    query_string += filters_conditions
     query_results = cluster.query(query_string + f'LIMIT {limit} OFFSET {skip}')
     return [row async for row in query_results]

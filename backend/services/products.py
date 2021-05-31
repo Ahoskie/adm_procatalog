@@ -6,6 +6,7 @@ from couchbase.exceptions import DocumentNotFoundException
 
 from db.buckets import Buckets
 from db.exceptions import UniqueConstraintViolation
+from db.filters import FilterEquals, FilterAny
 from core.config import PRODUCTS_BUCKET, BRANDS_BUCKET, TAGS_BUCKET
 from services import upsert, get, get_all, delete, custom_query, update, search_in_bucket
 from services.utils import get_or_create, get_document_if_exists
@@ -112,13 +113,19 @@ async def remove_product_by_uuid(uuid):
         raise DocumentNotFound(uuid)
 
 
-async def find_product(search_string='', skip=0, limit=100):
+async def find_product(brand: str, tags: list = [], search_string='', skip=0, limit=100):
     bucket = await Buckets.get_bucket(PRODUCTS_BUCKET)
     fields = [
         'name',
         'brand.name'
     ]
-    return await search_in_bucket(bucket, search_string=search_string, fields=fields, skip=skip, limit=limit)
+    filters = []
+    if brand:
+        filters.append(FilterEquals('brand.name', brand))
+    if tags:
+        filters.append(FilterAny('tags', tags, 'name'))
+    return await search_in_bucket(bucket, search_string=search_string, fields=fields, filters=filters, skip=skip,
+                                  limit=limit)
 
 
 async def find_product_images(search_string=''):
